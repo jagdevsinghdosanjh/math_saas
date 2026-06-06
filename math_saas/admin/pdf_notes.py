@@ -7,7 +7,7 @@ def render():
     sb = supabase()
     notes = sb.table("pdf_notes").select("*").order("id", desc=True).execute().data
 
-    st.dataframe(notes, use_container_width=True)
+    st.dataframe(notes, width="stretch")
 
     st.subheader("Add PDF Note")
     with st.form("add_pdf"):

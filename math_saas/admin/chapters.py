@@ -8,7 +8,7 @@ def render():
     chapters = sb.table("chapters").select("*").order("id", desc=True).execute().data
 
     st.subheader("All Chapters")
-    st.dataframe(chapters, use_container_width=True)
+    st.dataframe(chapters, width="stretch")
 
     st.subheader("Add Chapter")
     with st.form("add_chapter"):
@@ -43,7 +43,7 @@ def render():
 #     chapters = res.data or []
 
 #     st.subheader("All Chapters")
-#     st.dataframe(chapters, use_container_width=True)
+#     st.dataframe(chapters, width="stretch")
 
 #     st.subheader("Add Chapter")
 #     with st.form("add_chapter"):

@@ -8,7 +8,7 @@ def render():
     data = sb.table("app_users").select("*").order("created_at", desc=True).execute().data
 
     st.subheader("All Users")
-    st.dataframe(data, use_container_width=True)
+    st.dataframe(data, width="stretch")
 
     st.subheader("Add User")
     with st.form("add_user"):
@@ -31,7 +31,7 @@ def render():
 #     users = res.data or []
 
 #     st.subheader("All Users")
-#     st.dataframe(users, use_container_width=True)
+#     st.dataframe(users, width="stretch")
 
 #     st.subheader("Add User")
 #     with st.form("add_user"):

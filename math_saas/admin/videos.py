@@ -7,7 +7,7 @@ def render():
     sb = supabase()
     videos = sb.table("videos").select("*").order("id", desc=True).execute().data
 
-    st.dataframe(videos, use_container_width=True)
+    st.dataframe(videos, width="stretch")
 
     st.subheader("Add Video")
     with st.form("add_video"):

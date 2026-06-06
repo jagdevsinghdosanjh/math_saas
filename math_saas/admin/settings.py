@@ -7,7 +7,7 @@ def render():
     sb = supabase()
     settings = sb.table("settings").select("*").execute().data
 
-    st.dataframe(settings, use_container_width=True)
+    st.dataframe(settings, width="stretch")
 
     st.subheader("Update Setting")
     with st.form("update_setting"):
