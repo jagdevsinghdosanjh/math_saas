@@ -9,27 +9,40 @@ def render_public_content():
 
     sb = get_supabase()
 
-    # Fetch all content
+    # Fetch content
     res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
-    items = res.data or []
+    raw_items = res.data or []
 
+    # Only keep dict items
+    items = [i for i in raw_items if isinstance(i, dict)]
+
+    # Student session
     student = st.session_state.get("student")
-    user_id = student["id"] if student else None
+    user_id = student["id"] if isinstance(student, dict) else None
 
-    # Check subscription
+    # Subscription check
     sub = get_active_subscription(user_id) if user_id else None
     has_access = sub is not None
 
+    if not items:
+        st.info("No content available yet.")
+        return
+
     for item in items:
+        # Safe key access
+        title = item.get("title", "Untitled")
+        body = item.get("body", "")
         premium = item.get("is_premium", False)
 
-        # If premium and user not subscribed → show teaser only
+        # Premium content but user not subscribed → teaser only
         if premium and not has_access:
             st.markdown(
                 f"""
                 <div class="neon-card" style="margin-bottom:12px;">
-                    <h4>{item['title']}</h4>
-                    <p style="color:{TEXT_MUTED};">Premium content — subscribe to read more.</p>
+                    <h4>{title}</h4>
+                    <p style="color:{TEXT_MUTED};">
+                        Premium content — subscribe to read more.
+                    </p>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -40,8 +53,10 @@ def render_public_content():
         st.markdown(
             f"""
             <div class="neon-card" style="margin-bottom:12px;">
-                <h4>{item['title']}</h4>
-                <p style="color:{TEXT_MUTED}; white-space:pre-wrap;">{item['body']}</p>
+                <h4>{title}</h4>
+                <p style="color:{TEXT_MUTED}; white-space:pre-wrap;">
+                    {body}
+                </p>
             </div>
             """,
             unsafe_allow_html=True,
