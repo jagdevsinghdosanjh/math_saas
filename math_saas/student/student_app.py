@@ -6,6 +6,16 @@ from math_saas.utils.db import get_supabase
 from math_saas.student.subscriptions_page import render_subscriptions_page
 from math_saas.subscriptions.access import require_active_subscription
 
+from math_saas.student.billing_history import render_billing_history
+
+# in run_student()
+tab_dashboard, tab_chapters, tab_subs, tab_billing = st.tabs(
+    ["Dashboard", "Chapters", "Subscription", "Billing"]
+)
+
+with tab_billing:
+    render_billing_history()
+
 
 # -----------------------------
 # Render Chapters List
@@ -55,6 +65,7 @@ def render_dashboard():
     st.write(f"Logged in as: **{student.get('email', '')}**")
 
     st.info("Your learning dashboard will appear here soon.")
+
 
 
 # -----------------------------
