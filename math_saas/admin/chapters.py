@@ -1,10 +1,10 @@
 ﻿import streamlit as st
-from math_saas.utils.db import supabase
+from math_saas.utils.db import get_supabase
 
 def render():
     st.header("Chapters")
 
-    sb = supabase()
+    sb = get_supabase()
     chapters = sb.table("chapters").select("*").order("id", desc=True).execute().data
 
     st.subheader("All Chapters")

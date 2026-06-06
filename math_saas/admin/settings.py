@@ -1,10 +1,10 @@
 ﻿import streamlit as st
-from math_saas.utils.db import supabase
+from math_saas.utils.db import get_supabase
 
 def render():
     st.header("Settings")
 
-    sb = supabase()
+    sb = get_supabase()
     settings = sb.table("settings").select("*").execute().data
 
     st.dataframe(settings, width="stretch")

@@ -1,6 +1,9 @@
 ﻿import streamlit as st
 from math_saas.auth import require_admin
+from math_saas.utils.db import get_supabase
 from math_saas.admin import users, subscriptions, chapters, analytics, settings
+
+sb=get_supabase()
 
 def run_admin():
     require_admin()  # ensures login first

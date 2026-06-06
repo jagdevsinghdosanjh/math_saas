@@ -1,10 +1,10 @@
 ﻿import streamlit as st
-from math_saas.utils.db import supabase
+from math_saas.utils.db import get_supabase
 
 def render():
     st.header("Users")
 
-    sb = supabase()
+    sb = get_supabase()
     data = sb.table("app_users").select("*").order("created_at", desc=True).execute().data
 
     st.subheader("All Users")

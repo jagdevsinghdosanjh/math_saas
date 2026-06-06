@@ -1,10 +1,10 @@
 import streamlit as st
-from math_saas.utils.db import supabase
+from math_saas.utils.db import get_supabase
 
 def render():
     st.header("Videos")
 
-    sb = supabase()
+    sb = get_supabase()
     videos = sb.table("videos").select("*").order("id", desc=True).execute().data
 
     st.dataframe(videos, width="stretch")
