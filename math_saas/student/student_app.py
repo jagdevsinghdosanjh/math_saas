@@ -1,4 +1,5 @@
 ﻿import streamlit as st
+from math_saas.student.public_content import render_public_content
 
 from math_saas.auth import (
     require_student,
@@ -16,8 +17,11 @@ from math_saas.student.chapters_page import render_chapters_page
 def run_student():
     app_container_style()
 
-    # handle logout via query param
-    if st.query_params.get("student_logout") == "true":
+    # SAFE QUERY PARAM ACCESS
+    params = st.query_params
+    student_logout_flag = params["student_logout"] if "student_logout" in params else None
+
+    if student_logout_flag == "true":
         logout()
 
     require_student()
@@ -35,8 +39,8 @@ def run_student():
         unsafe_allow_html=True,
     )
 
-    tab_dashboard, tab_chapters, tab_subs, tab_billing = st.tabs(
-        ["Dashboard", "Chapters", "Subscription", "Billing"]
+    tab_dashboard, tab_chapters, tab_subs, tab_billing, tab_public = st.tabs(
+        ["Dashboard", "Chapters", "Subscription", "Billing", "Math & News"]
     )
 
     with tab_dashboard:
@@ -56,3 +60,6 @@ def run_student():
 
     with tab_billing:
         render_billing_history()
+
+    with tab_public:
+        render_public_content()

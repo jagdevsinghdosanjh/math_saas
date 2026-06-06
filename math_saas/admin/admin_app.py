@@ -1,4 +1,5 @@
 ﻿import streamlit as st
+from math_saas.admin.content_admin import render as render_content_admin
 
 from math_saas.auth import (
     require_admin,
@@ -20,8 +21,11 @@ from math_saas.admin.settings import render as render_settings
 def run_admin():
     app_container_style()
 
-    # handle logout via query param
-    if st.query_params.get("admin_logout") == "true":
+    # SAFE QUERY PARAM ACCESS
+    params = st.query_params
+    admin_logout_flag = params["admin_logout"] if "admin_logout" in params else None
+
+    if admin_logout_flag == "true":
         logout()
 
     require_admin()
@@ -39,6 +43,7 @@ def run_admin():
                 "Users",
                 "PDF Notes",
                 "Videos",
+                "Content Manager",
                 "Settings",
             ],
         )
@@ -63,6 +68,9 @@ def run_admin():
 
     elif menu == "Videos":
         render_videos()
+
+    elif menu == "Content Manager":
+        render_content_admin()
 
     elif menu == "Settings":
         render_settings()
