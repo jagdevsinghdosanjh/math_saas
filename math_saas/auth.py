@@ -1,135 +1,97 @@
 ﻿import streamlit as st
-from typing import Optional, TypedDict, cast
-from math_saas.utils.db import get_supabase
+from typing import Any, Dict
 
 
 # -----------------------------
-# Typed Profile Structure
+# THEME HELPERS
 # -----------------------------
-class Profile(TypedDict, total=False):
-    id: str
-    email: str
-    is_admin: bool
+PRIMARY_BG = "#050608"
+PRIMARY_CARD = "#111318"
+ACCENT = "#00ff88"
+ACCENT_SOFT = "rgba(0, 255, 136, 0.12)"
+DANGER = "#e63946"
+TEXT_MAIN = "#f5f5f5"
+TEXT_MUTED = "#9ca3af"
 
 
-# -----------------------------
-# ADMIN LOGIN
-# -----------------------------
-def admin_login_form():
-    st.subheader("Admin Login")
-
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-
-    if st.button("Login", type="primary"):
-        sb = get_supabase()
-
-        try:
-            res = sb.auth.sign_in_with_password(
-                {"email": email, "password": password}
-            )
-        except Exception:
-            st.error("Invalid login credentials")
-            return
-
-        user = res.user
-        if not user:
-            st.error("Invalid login credentials")
-            return
-
-        # Fetch profile
-        result = (
-            sb.table("profiles")
-            .select("id, email, is_admin")
-            .eq("id", user.id)
-            .single()
-            .execute()
-        )
-
-        profile = cast(Optional[Profile], result.data)
-
-        if not profile:
-            st.error("Profile not found in database")
-            return
-
-        if not profile.get("is_admin"):
-            st.error("You are not authorized as admin")
-            return
-
-        # Store session
-        st.session_state["user"] = profile
-        st.session_state["is_admin"] = True
-
-        st.success("Logged in successfully")
-        st.rerun()
+def app_container_style():
+    st.markdown(
+        f"""
+        <style>
+        .main {{
+            background: radial-gradient(circle at top left, #10141f 0, #050608 45%, #000000 100%);
+            color: {TEXT_MAIN};
+        }}
+        .stButton>button {{
+            background: linear-gradient(135deg, {ACCENT} 0%, #00c96b 100%);
+            color: #000;
+            border-radius: 999px;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            font-weight: 600;
+        }}
+        .stButton>button:hover {{
+            filter: brightness(1.1);
+        }}
+        .neon-card {{
+            background: {PRIMARY_CARD};
+            border-radius: 16px;
+            padding: 18px 20px;
+            border: 1px solid {ACCENT_SOFT};
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.08);
+        }}
+        .neon-pill {{
+            display:inline-block;
+            padding: 4px 10px;
+            border-radius:999px;
+            border:1px solid {ACCENT};
+            color:{ACCENT};
+            font-size:0.75rem;
+            text-transform:uppercase;
+            letter-spacing:0.08em;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
-def require_admin():
-    """Protect admin pages."""
-    if st.session_state.get("is_admin"):
-        return
-    admin_login_form()
-    st.stop()
-
-
-# -----------------------------
-# STUDENT LOGIN
-# -----------------------------
-def student_login_form():
-    st.subheader("Student Login")
-
-    email = st.text_input("Email", key="student_email")
-    password = st.text_input("Password", type="password", key="student_pass")
-
-    if st.button("Login", type="primary", key="student_login_btn"):
-        sb = get_supabase()
-
-        try:
-            res = sb.auth.sign_in_with_password(
-                {"email": email, "password": password}
-            )
-        except Exception:
-            st.error("Invalid login credentials")
-            return
-
-        user = res.user
-        if not user:
-            st.error("Invalid login credentials")
-            return
-
-        # Fetch profile
-        result = (
-            sb.table("profiles")
-            .select("id, email, is_admin")
-            .eq("id", user.id)
-            .single()
-            .execute()
-        )
-
-        profile = cast(Optional[Profile], result.data)
-
-        if not profile:
-            st.error("Profile not found")
-            return
-
-        if profile.get("is_admin"):
-            st.error("Admins must login from Admin tab")
-            return
-
-        # Store session
-        st.session_state["student"] = profile
-        st.session_state["is_student"] = True
-
-        st.success("Logged in successfully")
-        st.rerun()
-
-
-def require_student():
-    """Protect student pages."""
-    if st.session_state.get("is_student"):
-        return
-    student_login_form()
-    st.stop()
+def top_bar(title: str, role: str, logout_param: str):
+    st.markdown(
+        f"""
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:12px 18px;
+            background:linear-gradient(90deg,#020617,#020617,#0f172a);
+            border-bottom:1px solid {ACCENT_SOFT};
+            position:sticky;
+            top:0;
+            z-index:100;
+        ">
+            <div>
+                <div class="neon-pill">{role}</div>
+                <h3 style="margin:4px 0 0 0; color:{TEXT_MAIN};">
+                    {title}
+                </h3>
+            </div>
+            <a href='/?{logout_param}=true'
+               style="
+                    color:white;
+                    background:{DANGER};
+                    padding:8px 16px;
+                    border-radius:999px;
+                    text-decoration:none;
+                    font-weight:600;
+                    font-size:0.9rem;
+               ">
+                Logout
+            </a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # -----------------------------
@@ -137,5 +99,24 @@ def require_student():
 # -----------------------------
 def logout():
     st.session_state.clear()
-    st.success("Logged out successfully")
+    st.success("Logged out successfully.")
     st.rerun()
+
+
+# -----------------------------
+# REQUIRE ADMIN / STUDENT
+# -----------------------------
+def require_admin() -> Dict[str, Any]:
+    admin = st.session_state.get("admin")
+    if not admin:
+        st.error("Please login as admin.")
+        st.stop()
+    return admin
+
+
+def require_student() -> Dict[str, Any]:
+    student = st.session_state.get("student")
+    if not student:
+        st.error("Please login as student.")
+        st.stop()
+    return student
