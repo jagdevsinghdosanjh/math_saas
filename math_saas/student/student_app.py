@@ -19,8 +19,8 @@ from math_saas.student.chapters_page import render_chapters_page
 def get_supabase():
     """Connect to Supabase using anon key for student access."""
     try:
-        url = st.secrets["supabase"]["url"]
-        key = st.secrets["supabase"]["anon_key"]
+        url = st.secrets["supabase_url"]
+        key = st.secrets["anon_key"]
         return create_client(url, key)
     except Exception as e:
         st.error(f"Supabase connection error: {e}")
