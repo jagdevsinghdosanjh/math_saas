@@ -10,8 +10,7 @@ def get_supabase():
 def sync_chapters():
     sb = get_supabase()
     url = "https://jsdasr-math-cbse.vercel.app/9th-Math/index.html"
-    html = requests.get(url).text
-
+    html = requests.get(url).text  # noqa: F841
     chapters = [
         "Chapter 1 - Number Systems",
         "Chapter 2 - Polynomials",
