@@ -47,9 +47,7 @@ def app_container_style():
 # -----------------------------
 # PUBLIC CONTENT RENDERER
 # -----------------------------
-
 def render_public_content():
-    """Render public content with proper LaTeX formatting."""
     sb = get_supabase()
     res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
     items = [i for i in (res.data or []) if isinstance(i, dict)]
@@ -61,14 +59,15 @@ def render_public_content():
 
         st.markdown(f"### {title}")
 
-        # ✅ Remove stray backslashes before $$ and normalize math blocks
-        body = re.sub(r"\\\s*\$\$", "$$", body)
-        body = re.sub(r"\$\$\s*\\", "$$", body)
-        body = re.sub(r"\\\$", "$", body)
+        # ✅ Clean up escaped LaTeX and delimiters
+        body = re.sub(r"\\\\", "\\", body)          # turn \\frac → \frac
+        body = re.sub(r"\\\(", "$", body)           # convert \( → $
+        body = re.sub(r"\\\)", "$", body)           # convert \) → $
+        body = re.sub(r"\\\[", "$$", body)          # convert \[ → $$
+        body = re.sub(r"\\\]", "$$", body)          # convert \]→ $$
 
         # ✅ Split into math and non‑math segments
         parts = re.split(r"(\$\$.*?\$\$|\$.*?\$)", body)
-        body = re.sub(r"\\\(|\\\)", "$", body)
 
         for part in parts:
             if re.match(r"(\$\$.*?\$\$|\$.*?\$)", part):
