@@ -35,7 +35,7 @@ def app_container_style():
         unsafe_allow_html=True,
     )
 
-    # ✅ Inject MathJax for client‑side LaTeX rendering
+    # ✅ Load MathJax and trigger rendering after content loads
     st.markdown(
         """
         <script>
@@ -45,6 +45,13 @@ def app_container_style():
         };
         </script>
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+        <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          if (window.MathJax) {
+            MathJax.typesetPromise();
+          }
+        });
+        </script>
         """,
         unsafe_allow_html=True,
     )
