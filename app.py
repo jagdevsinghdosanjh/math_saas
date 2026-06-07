@@ -23,6 +23,7 @@ def handle_login(email, password, role):
         st.error("Invalid login credentials")
         return None
 
+    # Fetch profile
     try:
         profile_raw = (
             sb.table("profiles")
@@ -41,6 +42,7 @@ def handle_login(email, password, role):
         st.error("Profile not found.")
         return None
 
+    # Role validation
     if role == "admin" and not profile.get("is_admin", False):
         st.error("You are not an admin.")
         return None
@@ -53,12 +55,13 @@ def handle_login(email, password, role):
 
 
 # -----------------------------
-# LOGIN FORMS
+# ADMIN LOGIN FORM
 # -----------------------------
 def admin_login_form():
     st.markdown("<h3>Admin Login</h3>", unsafe_allow_html=True)
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
+
     if st.button("Login as Admin"):
         profile = handle_login(email, password, role="admin")
         if profile:
@@ -67,10 +70,14 @@ def admin_login_form():
             st.rerun()
 
 
+# -----------------------------
+# STUDENT LOGIN FORM
+# -----------------------------
 def student_login_form():
     st.markdown("<h3>Student Login</h3>", unsafe_allow_html=True)
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
+
     if st.button("Login as Student"):
         profile = handle_login(email, password, role="student")
         if profile:
@@ -90,6 +97,7 @@ def main():
         horizontal=True
     )
 
+    # Apply selected theme
     if theme_choice == "Light":
         apply_light_theme()
     else:
@@ -97,12 +105,60 @@ def main():
 
     params = st.query_params
 
+    # Logout handling
     if params.get("admin_logout") == "true":
         logout()
     if params.get("student_logout") == "true":
         logout()
 
-    admin_data = st.session_state.get("admin
+    admin_data = st.session_state.get("admin")
+    student_data = st.session_state.get("student")
+
+    # Route to dashboards
+    if isinstance(admin_data, dict):
+        run_admin()
+        return
+
+    if isinstance(student_data, dict):
+        run_student()
+        return
+
+    # Login gateway
+    st.markdown(
+        """
+        <h2 style="margin-top:0;">Welcome to Math Hub</h2>
+        <p style="color:#9ca3af;">Choose your login type to continue.</p>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("Admin Login"):
+            st.session_state["login_mode"] = "admin"
+            st.rerun()
+
+    with col2:
+        if st.button("Student Login"):
+            st.session_state["login_mode"] = "student"
+            st.rerun()
+
+    mode = st.session_state.get("login_mode")
+
+    if mode == "admin":
+        admin_login_form()
+    elif mode == "student":
+        student_login_form()
+
+    # Always show public content below login gateway
+    st.markdown("<hr>", unsafe_allow_html=True)
+    render_public_content()
+
+
+if __name__ == "__main__":
+    main()
+
 # import streamlit as st
 # from math_saas.auth import logout, app_container_style
 # from math_saas.admin.admin_app import run_admin
