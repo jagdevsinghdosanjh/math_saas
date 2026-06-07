@@ -1,0 +1,91 @@
+CREATE OR REPLACE FUNCTION clean_math_content()
+RETURNS TRIGGER AS $BODY$
+BEGIN
+  -- Normalize math delimiters for Streamlit rendering
+  NEW.body := regexp_replace(NEW.body, '\
+
+\[([^\\]
+
+]+)\\]
+
+', '$$\\1$$', 'g');
+  NEW.body := regexp_replace(NEW.body, '\\\\\\((.*?)\\\\\\)', '$\\1$', 'g');
+  NEW.body := regexp_replace(NEW.body, '\\\\', '', 'g');
+
+  -- Add missing backslashes before common LaTeX keywords
+  NEW.body := regexp_replace(NEW.body, '([^\\\\]
+
+)frac', '\1\\frac', 'g');
+  NEW.body := regexp_replace(NEW.body, '([^\\\\]
+
+)sqrt', '\1\\sqrt', 'g');
+  NEW.body := regexp_replace(NEW.body, '([^\\\\]
+
+)times', '\1\\times', 'g');
+  NEW.body := regexp_replace(NEW.body, '([^\\\\]
+
+)sum', '\1\\sum', 'g');
+
+  -- Sanitize unsafe HTML tags
+  NEW.body := regexp_replace(
+    NEW.body,
+    '<(script|style|iframe|object|embed|form|input|button)[^>]*>.*?</\\1>',
+    '',
+    'gi'
+  );
+  NEW.body := regexp_replace(
+    NEW.body,
+    '<(/?)(div|span|p|br|b|i|u|strong|em|h[1-6]|table|tr|td|th|ul|ol|li|a)[^>]*>',
+    '',
+    'gi'
+  );
+
+  -- Trim excessive whitespace
+  NEW.body := regexp_replace(NEW.body, '\\s{2,}', ' ', 'g');
+
+  RETURN NEW;
+END;
+$BODY$ LANGUAGE plpgsql;
+
+
+This one below worked well and also the one above
+
+CREATE OR REPLACE FUNCTION clean_math_content()
+RETURNS TRIGGER AS $BODY$
+BEGIN
+  -- Normalize math delimiters for Streamlit rendering
+  NEW.body := regexp_replace(NEW.body, '\
+
+\[([^\\]
+
+]+)\\]
+
+', '$$\\1$$', 'g');
+  NEW.body := regexp_replace(NEW.body, '\\\\\\((.*?)\\\\\\)', '$\\1$', 'g');
+  NEW.body := regexp_replace(NEW.body, '\\\\', '', 'g');
+
+  -- Sanitize unsafe HTML tags
+  NEW.body := regexp_replace(
+    NEW.body,
+    '<(script|style|iframe|object|embed|form|input|button)[^>]*>.*?</\\1>',
+    '',
+    'gi'
+  );
+  NEW.body := regexp_replace(
+    NEW.body,
+    '<(/?)(div|span|p|br|b|i|u|strong|em|h[1-6]|table|tr|td|th|ul|ol|li|a)[^>]*>',
+    '',
+    'gi'
+  );
+
+  -- Trim excessive whitespace
+  NEW.body := regexp_replace(NEW.body, '\\s{2,}', ' ', 'g');
+
+  RETURN NEW;
+END;
+$BODY$ LANGUAGE plpgsql;
+
+CREATE TRIGGER format_math_before_insert
+BEFORE INSERT OR UPDATE ON public_content
+FOR EACH ROW
+EXECUTE FUNCTION clean_math_content();
