@@ -35,31 +35,26 @@ def app_container_style():
         """,
         unsafe_allow_html=True,
     )
-
     # ✅ Inject KaTeX for math rendering
     st.markdown(
-        """
+        r"""
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
-            onload="renderMathInElement(document.body, {
-              delimiters: [
+        onload="renderMathInElement(document.body,
+        {
+            delimiters:
+            [
                 {left: '$$', right: '$$', display: true},
                 {left: '$', right: '$', display: false},
-                {left: '\\\\(', right: '\\\\)', display: false},
-                {left: '\\\
-
-\[', right: '\\\\]
-
-', display: true}
-              ]
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+            ]
             });">
         </script>
         """,
         unsafe_allow_html=True,
     )
-
-
 # -----------------------------
 # PUBLIC CONTENT RENDERER
 # -----------------------------
