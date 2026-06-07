@@ -1,4 +1,4 @@
-﻿﻿﻿﻿import streamlit as st
+﻿﻿import streamlit as st
 
 from auth import logout, app_container_style
 from admin.admin_app import run_admin
