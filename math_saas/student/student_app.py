@@ -16,36 +16,22 @@ from math_saas.utils.db import get_supabase
 # -----------------------------
 # NEW: Synced Chapters Renderer
 # -----------------------------
-
 def render_synced_chapters():
-    """Display synced chapters from Supabase sync_chapters table safely."""
+    """Display synced chapters from Supabase sync_chapters table."""
     sb = get_supabase()
-    try:
-        res = sb.table("sync_chapters").select("*").eq("is_published", True).order("created_at", desc=True).execute()
-        chapters = res.data or []
-    except Exception as e:
-        st.error(f"Error fetching chapters: {e}")
-        return
+    res = sb.table("sync_chapters").select("*").eq("is_published", True).order("created_at", desc=True).execute()
+    chapters = res.data or []
 
     if not chapters:
         st.info("No synced chapters available yet.")
         return
 
     st.subheader("📘 Synced Chapters (CBSE 9th Math)")
-
     for ch in chapters:
-        # Ensure each record is a dictionary before accessing keys
-        if not isinstance(ch, dict):
-            continue
-
-        title = str(ch.get("chapter_title", "Untitled"))
-        desc = str(ch.get("description", "Chapter details coming soon."))
-        url = ch.get("chapter_url")
-
-        with st.expander(title):
-            st.write(desc)
-            if isinstance(url, str) and url.strip():
-                st.markdown(f"[View Chapter]({url})", unsafe_allow_html=True)
+        with st.expander(ch["chapter_title"]):
+            st.write(ch.get("description", ""))
+            if ch.get("chapter_url"):
+                st.markdown(f"[View Chapter]({ch['chapter_url']})", unsafe_allow_html=True)
 
 
 # -----------------------------
@@ -58,7 +44,7 @@ def run_student():
     params = st.query_params
     if params.get("student_logout") == "true":
         logout()
-    
+
     require_student()
     top_bar("Math Hub Student Portal", "Student", "student_logout")
 
@@ -114,4 +100,3 @@ def run_student():
     # Public content
     with tab_public:
         ROUTES["Math & News"]()
-    
