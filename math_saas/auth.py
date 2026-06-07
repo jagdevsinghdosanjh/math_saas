@@ -258,7 +258,6 @@ def require_admin() -> Dict[str, Any]:
         st.stop()
     return admin
 
-
 def require_student() -> Dict[str, Any]:
     student = st.session_state.get("student")
     if not student:
