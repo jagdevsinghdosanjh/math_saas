@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 from math_saas.student.public_content import render_public_content
 
 from math_saas.auth import (
