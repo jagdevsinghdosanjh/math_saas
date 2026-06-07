@@ -34,35 +34,11 @@ def app_container_style():
         unsafe_allow_html=True,
     )
 
-    # ✅ Inject MathJax using a hosted HTML file instead of srcdoc
-    mathjax_html = """
-    <html>
-    <head>
-      <script>
-        window.MathJax = {
-          tex: { inlineMath: [['\\(','\\)'], ['$', '$']], displayMath: [['\\[','\\]'], ['$$','$$']] },
-          svg: { fontCache: 'global' }
-        };
-      </script>
-      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-      <script>
-        const renderMath = () => {
-          if (window.MathJax && window.MathJax.typesetPromise) MathJax.typesetPromise();
-        };
-        const observer = new MutationObserver(renderMath);
-        observer.observe(document.body, { childList: true, subtree: true });
-        document.addEventListener("DOMContentLoaded", renderMath);
-      </script>
-    </head>
-    <body></body>
-    </html>
-    """
-
-    # Save temporary HTML file for iframe injection
-    with open("mathjax_loader.html", "w", encoding="utf-8") as f:
-        f.write(mathjax_html)
-
-    st.iframe(src="mathjax_loader.html", height=0)
+    # ✅ Inject MathJax safely (minimum visible height = 1)
+    st.iframe(
+        src="https://cdn.jsdelivr.net/gh/jsd1973/mathjax-loader@main/mathjax.html",
+        height=1,  # must be ≥1
+    )
 
 # -----------------------------
 # DARK THEME — Neon Edition
