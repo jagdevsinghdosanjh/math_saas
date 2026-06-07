@@ -1,5 +1,5 @@
-﻿﻿import streamlit as st
-from student.public_content import render_public_content
+﻿﻿﻿﻿import streamlit as st
+from math_saas.student.public_content import render_public_content
 
 from auth import (
     require_student,
@@ -8,10 +8,10 @@ from auth import (
     top_bar,
 )
 
-from student.subscriptions_page import render_subscriptions_page
-from student.billing_history import render_billing_history
-from student.dashboard import render_dashboard
-from student.chapters_page import render_chapters_page
+from math_saas.student.subscriptions_page import render_subscriptions_page
+from math_saas.student.billing_history import render_billing_history
+from math_saas.student.dashboard import render_dashboard
+from math_saas.student.chapters_page import render_chapters_page
 
 
 def run_student():

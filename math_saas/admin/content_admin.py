@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.db import get_supabase
+from math_saas.utils.db import get_supabase
 from auth import require_admin, TEXT_MUTED #noqa
 
 

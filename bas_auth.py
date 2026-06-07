@@ -1,6 +1,6 @@
-﻿﻿import streamlit as st
+﻿﻿﻿﻿import streamlit as st
 from typing import Optional, TypedDict, cast
-from utils.db import get_supabase
+from math_saas.utils.db import get_supabase
 
 
 # -----------------------------

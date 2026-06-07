@@ -2,13 +2,13 @@ import datetime as dt
 import streamlit as st
 from typing import Any, Dict
 
-from subscriptions.core import (
+from math_saas.subscriptions.core import (
     create_subscription,
     activate_subscription,
     get_latest_subscription,
 )
-from subscriptions.plans import PLANS
-from utils.payment import create_order, verify_payment_signature
+from math_saas.subscriptions.plans import PLANS
+from math_saas.utils.payment import create_order, verify_payment_signature
 
 
 # -----------------------------
