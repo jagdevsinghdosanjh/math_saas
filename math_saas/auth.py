@@ -6,7 +6,7 @@ from typing import Any, Dict
 # -----------------------------
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
-ACCENT = "#00ff88"
+ACCENT = "#13b167"
 DANGER = "#ff4d6d"
 
 # -----------------------------
