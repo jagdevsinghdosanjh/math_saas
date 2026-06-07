@@ -44,7 +44,7 @@ def render():
         st.info("No subscriptions found.")
         return
 
-    st.dataframe(subs, use_container_width=True, hide_index=True)
+    st.dataframe(subs, width="stretch", hide_index=True)
 
     st.subheader("Inspect Subscription")
 
@@ -119,7 +119,7 @@ def render():
 
 #     st.dataframe(
 #         subs,
-#         use_container_width=True,
+#         width="stretch",
 #         hide_index=True,
 #     )
 

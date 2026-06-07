@@ -153,7 +153,7 @@ def run_admin():
 #     st.json(dist)
 
 #     st.subheader("Raw Subscription Data")
-#     st.dataframe(subs, use_container_width=True, hide_index=True)
+#     st.dataframe(subs, width="stretch", hide_index=True)
 
 # # import streamlit as st
 # # from math_saas.auth import require_admin
