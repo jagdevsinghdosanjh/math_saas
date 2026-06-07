@@ -99,8 +99,16 @@ def top_bar(title: str, role: str, logout_param: str):
 # -----------------------------
 def logout():
     st.session_state.clear()
-    st.success("Logged out successfully.")
-    st.rerun()
+    st.markdown(
+        "<meta http-equiv='refresh' content='0; url=/' />",
+        unsafe_allow_html=True
+    )
+    st.stop()
+
+# def logout():
+#     st.session_state.clear()
+#     st.success("Logged out successfully.")
+#     st.rerun()
 
 
 # -----------------------------
