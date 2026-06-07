@@ -16,22 +16,44 @@ from math_saas.utils.db import get_supabase
 # -----------------------------
 # NEW: Synced Chapters Renderer
 # -----------------------------
+import streamlit as st
+from math_saas.utils.db import get_supabase
+
+
 def render_synced_chapters():
-    """Display synced chapters from Supabase sync_chapters table."""
+    """Display synced chapters from Supabase sync_chapters table safely, with quiz links."""
     sb = get_supabase()
-    res = sb.table("sync_chapters").select("*").eq("is_published", True).order("created_at", desc=True).execute()
-    chapters = res.data or []
+    try:
+        res = sb.table("sync_chapters").select("*").eq("is_published", True).order("created_at", desc=True).execute()
+        chapters = res.data or []
+    except Exception as e:
+        st.error(f"Error fetching chapters: {e}")
+        return
 
     if not chapters:
         st.info("No synced chapters available yet.")
         return
 
     st.subheader("📘 Synced Chapters (CBSE 9th Math)")
+
     for ch in chapters:
-        with st.expander(ch["chapter_title"]):
-            st.write(ch.get("description", ""))
-            if ch.get("chapter_url"):
-                st.markdown(f"[View Chapter]({ch['chapter_url']})", unsafe_allow_html=True)
+        if not isinstance(ch, dict):
+            continue
+
+        title = str(ch.get("chapter_title", "Untitled"))
+        desc = str(ch.get("description", "Chapter details coming soon."))
+        url = ch.get("chapter_url")
+
+        with st.expander(title):
+            st.write(desc)
+            if isinstance(url, str) and url.strip():
+                st.markdown(f"[View Chapter]({url})", unsafe_allow_html=True)
+
+            # ✅ Add “Start Quiz” button
+            quiz_url = f"https://quiz-byjsdasr1973.streamlit.app/?chapter={title.replace(' ', '%20')}"
+            if st.button(f"Start Quiz for {title}", key=f"quiz_{title}"):
+                st.markdown(f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>', unsafe_allow_html=True)
+                # st.markdown(f"[Open Quiz Portal]({quiz_url})", unsafe_allow_html=True)
 
 
 # -----------------------------
