@@ -1,56 +1,19 @@
 import streamlit as st
 from math_saas.student.public_content import render_public_content
+
 from math_saas.auth import (
     require_student,
     logout,
     app_container_style,
     top_bar,
 )
+
 from math_saas.student.subscriptions_page import render_subscriptions_page
 from math_saas.student.billing_history import render_billing_history
 from math_saas.student.dashboard import render_dashboard
 from math_saas.student.chapters_page import render_chapters_page
-from math_saas.utils.db import get_supabase
 
 
-# -----------------------------
-# NEW: Synced Chapters Renderer
-# -----------------------------
-
-def render_synced_chapters():
-    """Display synced chapters from Supabase sync_chapters table safely."""
-    sb = get_supabase()
-    try:
-        res = sb.table("sync_chapters").select("*").eq("is_published", True).order("created_at", desc=True).execute()
-        chapters = res.data or []
-    except Exception as e:
-        st.error(f"Error fetching chapters: {e}")
-        return
-
-    if not chapters:
-        st.info("No synced chapters available yet.")
-        return
-
-    st.subheader("📘 Synced Chapters (CBSE 9th Math)")
-
-    for ch in chapters:
-        # Ensure each record is a dictionary before accessing keys
-        if not isinstance(ch, dict):
-            continue
-
-        title = str(ch.get("chapter_title", "Untitled"))
-        desc = str(ch.get("description", "Chapter details coming soon."))
-        url = ch.get("chapter_url")
-
-        with st.expander(title):
-            st.write(desc)
-            if isinstance(url, str) and url.strip():
-                st.markdown(f"[View Chapter]({url})", unsafe_allow_html=True)
-
-
-# -----------------------------
-# STUDENT PORTAL MAIN FUNCTION
-# -----------------------------
 def run_student():
     app_container_style()
 
@@ -58,7 +21,7 @@ def run_student():
     params = st.query_params
     if params.get("student_logout") == "true":
         logout()
-    
+
     require_student()
     top_bar("Math Hub Student Portal", "Student", "student_logout")
 
@@ -98,8 +61,6 @@ def run_student():
     with tab_chapters:
         try:
             ROUTES["Chapters"]()
-            st.markdown("---")
-            render_synced_chapters()  # ✅ Added new synced chapters section
         except Exception:
             st.info("Chapters page coming soon.")
 
@@ -114,4 +75,69 @@ def run_student():
     # Public content
     with tab_public:
         ROUTES["Math & News"]()
-    
+
+# import streamlit as st
+# from math_saas.student.public_content import render_public_content
+
+# from math_saas.auth import (
+#     require_student,
+#     logout,
+#     app_container_style,
+#     top_bar,
+# )
+
+# from math_saas.student.subscriptions_page import render_subscriptions_page
+# from math_saas.student.billing_history import render_billing_history
+# from math_saas.student.dashboard import render_dashboard
+# from math_saas.student.chapters_page import render_chapters_page
+
+
+# def run_student():
+#     app_container_style()
+
+#     # SAFE QUERY PARAM ACCESS
+#     params = st.query_params
+#     student_logout_flag = params["student_logout"] if "student_logout" in params else None
+
+#     if student_logout_flag == "true":
+#         logout()
+
+#     require_student()
+#     top_bar("Math Hub Student Portal", "Student", "student_logout")
+
+#     st.markdown(
+#         """
+#         <div class="neon-card" style="margin-top:16px; margin-bottom:10px;">
+#             <h4 style="margin:0 0 4px 0;">Welcome back 👋</h4>
+#             <p style="margin:0; color:#9ca3af; font-size:0.9rem;">
+#                 Continue your learning journey with structured chapters, notes, and practice.
+#             </p>
+#         </div>
+#         """,
+#         unsafe_allow_html=True,
+#     )
+
+#     tab_dashboard, tab_chapters, tab_subs, tab_billing, tab_public = st.tabs(
+#         ["Dashboard", "Chapters", "Subscription", "Billing", "Math & News"]
+#     )
+
+#     with tab_dashboard:
+#         try:
+#             render_dashboard()
+#         except Exception:
+#             st.info("Dashboard coming soon.")
+
+#     with tab_chapters:
+#         try:
+#             render_chapters_page()
+#         except Exception:
+#             st.info("Chapters page coming soon.")
+
+#     with tab_subs:
+#         render_subscriptions_page()
+
+#     with tab_billing:
+#         render_billing_history()
+
+#     with tab_public:
+#         render_public_content()
