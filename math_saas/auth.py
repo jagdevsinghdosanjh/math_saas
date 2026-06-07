@@ -78,11 +78,7 @@ def app_container_style():
     r"""
     <script>
     window.MathJax = {
-      tex: { inlineMath: [['\\(','\\)'], ['$', '$']], displayMath: [['\
-
-\[','\\]
-
-'], ['$$','$$']] },
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']], displayMath: [['\\[','\\]'], ['$$','$$']] },
       svg: { fontCache: 'global' }
     };
     (function() {
