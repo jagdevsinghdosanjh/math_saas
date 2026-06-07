@@ -25,7 +25,10 @@ def render_public_content():
         is_premium = bool(item.get("is_premium", False))
 
         # ✅ Auto‑fix math rendering and preserve LaTeX syntax
-        body = fix_math_rendering(body).replace("\\\\", "\\")
+        # body = fix_math_rendering(body).replace("\\\\", "\\")
+        body = fix_math_rendering(body)
+        st.markdown(body, unsafe_allow_html=True)
+
 
         st.markdown(
             f"""
