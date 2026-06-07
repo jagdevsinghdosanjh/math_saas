@@ -3,9 +3,8 @@ import re
 from typing import Any, Dict
 from math_saas.utils.db import get_supabase
 
-
 # ============================================================
-#  THEME COLORS
+# THEME COLORS
 # ============================================================
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
@@ -14,10 +13,10 @@ DANGER = "#ff4d6d"
 
 
 # ============================================================
-#  KATEX + GLOBAL STYLE LOADER
+# KATEX + GLOBAL STYLING
 # ============================================================
 def app_container_style():
-    """Inject global CSS + KaTeX loader."""
+    """Loads global CSS + KaTeX rendering engine."""
     st.markdown(
         f"""
         <style>
@@ -38,7 +37,7 @@ def app_container_style():
         unsafe_allow_html=True,
     )
 
-    # Correct KaTeX loader
+    # Load KaTeX (corrected)
     st.markdown(
         """
         <link rel="stylesheet"
@@ -64,10 +63,10 @@ def app_container_style():
 
 
 # ============================================================
-#  MATH CLEANING UTILITY
+# MATH CLEANING UTILITY
 # ============================================================
 def clean_math(text: str) -> str:
-    """Fix escaped LaTeX from Supabase."""
+    """Fixes escaped LaTeX from Supabase."""
     if not text:
         return ""
 
@@ -76,13 +75,14 @@ def clean_math(text: str) -> str:
     text = text.replace("\\\\[", "\\[")
     text = text.replace("\\\\]", "\\]")
     text = text.replace("\\\\frac", "\\frac")
+
     text = re.sub(r"\$\s*\$", "$$", text)
 
     return text
 
 
 # ============================================================
-#  PUBLIC CONTENT RENDERER
+# PUBLIC CONTENT RENDERER
 # ============================================================
 def render_public_content():
     """Render public content with KaTeX-enabled Markdown."""
@@ -118,7 +118,7 @@ def render_public_content():
 
 
 # ============================================================
-#  DARK THEME — Neon Edition
+# DARK THEME — Neon Edition
 # ============================================================
 def apply_dark_theme():
     st.markdown(
@@ -152,7 +152,7 @@ def apply_dark_theme():
 
 
 # ============================================================
-#  LIGHT THEME — Minimal Edition
+# LIGHT THEME — Minimal Edition
 # ============================================================
 def apply_light_theme():
     st.markdown(
@@ -186,7 +186,7 @@ def apply_light_theme():
 
 
 # ============================================================
-#  TOP BAR COMPONENT
+# TOP BAR COMPONENT
 # ============================================================
 def top_bar(title: str, role: str, logout_param: str):
     st.markdown(
@@ -240,7 +240,7 @@ def top_bar(title: str, role: str, logout_param: str):
 
 
 # ============================================================
-#  LOGOUT HANDLER
+# LOGOUT HANDLER
 # ============================================================
 def logout():
     st.session_state.clear()
@@ -249,7 +249,7 @@ def logout():
 
 
 # ============================================================
-#  ROLE VALIDATION HELPERS
+# ROLE VALIDATION HELPERS
 # ============================================================
 def require_admin() -> Dict[str, Any]:
     admin = st.session_state.get("admin")
@@ -257,7 +257,6 @@ def require_admin() -> Dict[str, Any]:
         st.error("Please login as admin.")
         st.stop()
     return admin
-
 
 def require_student() -> Dict[str, Any]:
     student = st.session_state.get("student")
