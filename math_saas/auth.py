@@ -46,8 +46,8 @@ st.markdown(r"""
             [
                 {left: '$$', right: '$$', display: true},
                 {left: '$', right: '$', display: false},
-                {left: '\\(', right: '\\)', display: false},
-                {left: '\\(', right: '\\)', display: true}
+                {left: '(', right: '\\)', display: false},
+                {left: '(', right: '\\)', display: true}
             ]
             });">
         </script>
