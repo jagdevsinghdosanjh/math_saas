@@ -105,7 +105,6 @@ def app_container_style():
     height=0,
 )
 
-
 # -----------------------------
 # DARK THEME — Neon Edition
 # -----------------------------
