@@ -1,7 +1,7 @@
 import streamlit as st
 from typing import Any, Dict, List
 
-from auth import require_admin
+from math_saas.auth import require_admin
 from math_saas.utils.db import get_supabase
 from math_saas.subscriptions.core import (
     get_latest_subscription,#noqa

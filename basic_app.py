@@ -1,6 +1,6 @@
-﻿﻿﻿﻿﻿﻿import streamlit as st
+﻿﻿﻿﻿﻿﻿﻿﻿import streamlit as st
 
-from auth import logout, app_container_style
+from math_saas.auth import logout, app_container_style
 from math_saas.admin.admin_app import run_admin
 from math_saas.student.student_app import run_student
 from math_saas.utils.db import get_supabase

@@ -1,7 +1,7 @@
 import streamlit as st
 from math_saas.utils.db import get_supabase
 from math_saas.subscriptions.core import get_active_subscription
-from auth import TEXT_MUTED
+from math_saas.auth import TEXT_MUTED
 
 
 def render_public_content():

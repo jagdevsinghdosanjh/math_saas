@@ -1,7 +1,7 @@
 ﻿﻿﻿﻿import streamlit as st
 from typing import Any, Dict, List
 
-from auth import require_student
+from math_saas.auth import require_student
 from math_saas.utils.db import get_supabase
 from math_saas.student.subscriptions_page import render_subscriptions_page
 from math_saas.subscriptions.access import require_active_subscription

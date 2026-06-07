@@ -1,7 +1,7 @@
 import streamlit as st
 from math_saas.subscriptions.core import get_active_subscription
 from math_saas.subscriptions.utils import format_inr, plan_name #noqa
-from auth import TEXT_MUTED, TEXT_MAIN, ACCENT #noqa
+from math_saas.auth import TEXT_MUTED, TEXT_MAIN, ACCENT #noqa
 
 
 def render_dashboard():

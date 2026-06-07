@@ -1,7 +1,7 @@
 ﻿﻿﻿﻿import streamlit as st
 from math_saas.student.public_content import render_public_content
 
-from auth import (
+from math_saas.auth import (
     require_student,
     logout,
     app_container_style,

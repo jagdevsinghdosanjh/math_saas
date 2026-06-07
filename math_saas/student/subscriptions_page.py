@@ -79,7 +79,7 @@ def _start_paid_flow(user_id: str, plan_code: str, plan: Dict[str, Any]):
 # RAZORPAY CHECKOUT UI
 # -----------------------------
 def _render_razorpay_checkout(order: Dict[str, Any], plan: Dict[str, Any]):
-    from config import RAZORPAY_KEY_ID
+    from math_saas.config import RAZORPAY_KEY_ID
 
     html = f"""
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>

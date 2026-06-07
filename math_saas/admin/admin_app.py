@@ -1,7 +1,7 @@
 ﻿﻿﻿﻿import streamlit as st
 from math_saas.admin.content_admin import render as render_content_admin
 
-from auth import (
+from math_saas.auth import (
     require_admin,
     logout,
     app_container_style,

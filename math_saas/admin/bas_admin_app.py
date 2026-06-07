@@ -1,6 +1,6 @@
 ﻿﻿﻿﻿import streamlit as st
 
-from auth import require_admin
+from math_saas.auth import require_admin
 
 # Admin modules
 from math_saas.admin.subscriptions_admin import render as render_subscriptions
