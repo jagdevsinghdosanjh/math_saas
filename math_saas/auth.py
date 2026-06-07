@@ -68,6 +68,7 @@ def render_public_content():
 
         # ✅ Split into math and non‑math segments
         parts = re.split(r"(\$\$.*?\$\$|\$.*?\$)", body)
+        body = re.sub(r"\\\(|\\\)", "$", body)
 
         for part in parts:
             if re.match(r"(\$\$.*?\$\$|\$.*?\$)", part):
@@ -77,7 +78,6 @@ def render_public_content():
                 st.markdown(part)
 
         st.markdown(f"**Premium:** {is_premium}")
-
 
 # -----------------------------
 # DARK THEME — Neon Edition
