@@ -62,7 +62,8 @@ def render_synced_chapters():
             if isinstance(url, str) and url.strip():
                 st.markdown(f"[View Chapter]({url})", unsafe_allow_html=True)
 
-            quiz_url = f"https://quiz-byjsdasr1973.streamlit.app/?chapter={title.replace(' ', '%20')}"
+            quiz_url = f"https://jsdasr-math-cbse.vercel.app/9th-Math/index.html?chapter={title.replace(' ', '%20')}"
+            # quiz_url = f"https://quiz-byjsdasr1973.streamlit.app/?chapter={title.replace(' ', '%20')}"
             st.markdown(f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>', unsafe_allow_html=True)
 
 
