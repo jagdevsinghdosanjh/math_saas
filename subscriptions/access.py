@@ -1,7 +1,7 @@
 import streamlit as st
 from typing import Any, Dict
 
-from math_saas.subscriptions.core import get_active_subscription
+from subscriptions.core import get_active_subscription
 
 
 def require_student_logged_in() -> Dict[str, Any]:

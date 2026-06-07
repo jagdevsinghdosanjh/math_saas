@@ -1,8 +1,8 @@
 import datetime as dt
 from typing import Any, Dict, List, Optional
 
-from math_saas.utils.db import get_supabase
-from math_saas.subscriptions.plans import PLANS
+from utils.db import get_supabase
+from subscriptions.plans import PLANS
 
 
 # -----------------------------

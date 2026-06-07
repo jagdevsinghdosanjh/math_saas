@@ -1,5 +1,5 @@
-﻿from supabase import create_client
-from math_saas.config import SUPABASE_URL, SUPABASE_ANON_KEY
+﻿﻿from supabase import create_client
+from config import SUPABASE_URL, SUPABASE_ANON_KEY
 
 # Singleton client
 _supabase = None

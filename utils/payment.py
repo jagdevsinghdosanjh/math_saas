@@ -2,7 +2,7 @@ import razorpay
 from typing import Any, Dict, Optional
 from razorpay.errors import SignatureVerificationError  # type: ignore
 
-from math_saas.config import RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
+from config import RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
 
 
 _client: Optional[razorpay.Client] = None

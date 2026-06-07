@@ -1,6 +1,6 @@
 import streamlit as st
-from math_saas.utils.db import get_supabase
-from math_saas.auth import require_admin, TEXT_MUTED #noqa
+from utils.db import get_supabase
+from auth import require_admin, TEXT_MUTED #noqa
 
 
 def render():

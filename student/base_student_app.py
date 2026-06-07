@@ -1,12 +1,12 @@
-﻿import streamlit as st
+﻿﻿import streamlit as st
 from typing import Any, Dict, List
 
-from math_saas.auth import require_student
-from math_saas.utils.db import get_supabase
-from math_saas.student.subscriptions_page import render_subscriptions_page
-from math_saas.subscriptions.access import require_active_subscription
+from auth import require_student
+from utils.db import get_supabase
+from student.subscriptions_page import render_subscriptions_page
+from subscriptions.access import require_active_subscription
 
-from math_saas.student.billing_history import render_billing_history
+from student.billing_history import render_billing_history
 
 # in run_student()
 tab_dashboard, tab_chapters, tab_subs, tab_billing = st.tabs(

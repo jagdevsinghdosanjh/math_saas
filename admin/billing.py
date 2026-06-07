@@ -1,9 +1,9 @@
 import streamlit as st
 from typing import Any, Dict, List
 
-from math_saas.auth import require_admin
-from math_saas.utils.db import get_supabase
-from math_saas.subscriptions.utils import format_inr, plan_name
+from auth import require_admin
+from utils.db import get_supabase
+from subscriptions.utils import format_inr, plan_name
 
 
 def _fetch_all_payments() -> List[Dict[str, Any]]:

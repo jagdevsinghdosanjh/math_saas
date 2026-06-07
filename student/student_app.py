@@ -1,17 +1,17 @@
-﻿import streamlit as st
-from math_saas.student.public_content import render_public_content
+﻿﻿import streamlit as st
+from student.public_content import render_public_content
 
-from math_saas.auth import (
+from auth import (
     require_student,
     logout,
     app_container_style,
     top_bar,
 )
 
-from math_saas.student.subscriptions_page import render_subscriptions_page
-from math_saas.student.billing_history import render_billing_history
-from math_saas.student.dashboard import render_dashboard
-from math_saas.student.chapters_page import render_chapters_page
+from student.subscriptions_page import render_subscriptions_page
+from student.billing_history import render_billing_history
+from student.dashboard import render_dashboard
+from student.chapters_page import render_chapters_page
 
 
 def run_student():

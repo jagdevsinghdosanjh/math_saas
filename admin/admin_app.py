@@ -1,21 +1,21 @@
-﻿import streamlit as st
-from math_saas.admin.content_admin import render as render_content_admin
+﻿﻿import streamlit as st
+from admin.content_admin import render as render_content_admin
 
-from math_saas.auth import (
+from auth import (
     require_admin,
     logout,
     app_container_style,
     top_bar,
 )
 
-from math_saas.admin.subscriptions_admin import render as render_subscriptions
-from math_saas.admin.analytics import render as render_analytics
-from math_saas.admin.billing import render as render_billing
-from math_saas.admin.chapters import render as render_chapters
-from math_saas.admin.users import render as render_users
-from math_saas.admin.pdf_notes import render as render_pdf_notes
-from math_saas.admin.videos import render as render_videos
-from math_saas.admin.settings import render as render_settings
+from admin.subscriptions_admin import render as render_subscriptions
+from admin.analytics import render as render_analytics
+from admin.billing import render as render_billing
+from admin.chapters import render as render_chapters
+from admin.users import render as render_users
+from admin.pdf_notes import render as render_pdf_notes
+from admin.videos import render as render_videos
+from admin.settings import render as render_settings
 
 
 def run_admin():

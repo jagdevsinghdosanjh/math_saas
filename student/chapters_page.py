@@ -1,5 +1,5 @@
 import streamlit as st
-from math_saas.auth import TEXT_MUTED
+from auth import TEXT_MUTED
 
 
 def render_chapters_page():

@@ -1,5 +1,5 @@
-﻿import streamlit as st
-from math_saas.utils.db import get_supabase
+﻿﻿import streamlit as st
+from utils.db import get_supabase
 
 def render():
     st.header("Users")
