@@ -37,25 +37,38 @@ def app_container_style():
 
     # ✅ MathJax configuration and dynamic rendering
     st.markdown(
-        """
-        <script>
-        window.MathJax = {
-          tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
-          svg: { fontCache: 'global' }
-        };
-        </script>
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-        <script>
-        const renderMath = () => {
-          if (window.MathJax) MathJax.typesetPromise();
-        };
-        const observer = new MutationObserver(renderMath);
-        observer.observe(document.body, { childList: true, subtree: true });
-        document.addEventListener("DOMContentLoaded", renderMath);
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
+    """
+    <script>
+    // --- MathJax Configuration ---
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      svg: { fontCache: 'global' }
+    };
+
+    // --- Load MathJax ---
+    (function() {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+      script.async = true;
+      document.head.appendChild(script);
+    })();
+
+    // --- Re-render MathJax whenever Streamlit updates the DOM ---
+    const renderMath = () => {
+      if (window.MathJax) MathJax.typesetPromise();
+    };
+
+    // Observe DOM changes (Streamlit reruns, tab switches, etc.)
+    const observer = new MutationObserver(renderMath);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Initial render
+    document.addEventListener("DOMContentLoaded", renderMath);
+    </script>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 
 # -----------------------------
