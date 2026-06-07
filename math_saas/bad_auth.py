@@ -1,22 +1,21 @@
 import streamlit as st
-import re
 from typing import Any, Dict
 from math_saas.utils.db import get_supabase
 
-# ============================================================
+# -----------------------------
 # THEME COLORS
-# ============================================================
+# -----------------------------
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
 ACCENT = "#00ff88"
 DANGER = "#ff4d6d"
 
 
-# ============================================================
-# KATEX + GLOBAL STYLING
-# ============================================================
+# -----------------------------
+# UNIVERSAL CONTAINER STYLE
+# -----------------------------
 def app_container_style():
-    """Loads global CSS + KaTeX rendering engine."""
+    """Applies base container styling and loads KaTeX globally."""
     st.markdown(
         f"""
         <style>
@@ -36,54 +35,29 @@ def app_container_style():
         """,
         unsafe_allow_html=True,
     )
-
-    # Load KaTeX (corrected)
-    st.markdown(
-        """
-        <link rel="stylesheet"
-              href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-
-        <script defer
-                src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js">
-        </script>
-
-        <script defer
-                src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
-                onload="renderMathInElement(document.body, {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\\\(', right: '\\\\)', display: false}
-                    ]
-                });">
+    # ✅ Inject KaTeX for math rendering
+st.markdown(r"""
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body,
+        {
+            delimiters:
+            [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '(', right: '\\)', display: false},
+                {left: '(', right: '\\)', display: true}
+            ]
+            });">
         </script>
         """,
         unsafe_allow_html=True,
     )
 
-
-# ============================================================
-# MATH CLEANING UTILITY
-# ============================================================
-def clean_math(text: str) -> str:
-    """Fixes escaped LaTeX from Supabase."""
-    if not text:
-        return ""
-
-    text = text.replace("\\\\(", "\\(")
-    text = text.replace("\\\\)", "\\)")
-    text = text.replace("\\\\[", "\\[")
-    text = text.replace("\\\\]", "\\]")
-    text = text.replace("\\\\frac", "\\frac")
-
-    text = re.sub(r"\$\s*\$", "$$", text)
-
-    return text
-
-
-# ============================================================
+# -----------------------------
 # PUBLIC CONTENT RENDERER
-# ============================================================
+# -----------------------------
 def render_public_content():
     """Render public content with KaTeX-enabled Markdown."""
     sb = get_supabase()
@@ -92,34 +66,17 @@ def render_public_content():
 
     for item in items:
         title = str(item.get("title", "Untitled"))
-        body = clean_math(str(item.get("body", "")))
+        body = str(item.get("body", ""))
         is_premium = bool(item.get("is_premium", False))
 
         st.markdown(f"### {title}")
         st.markdown(body, unsafe_allow_html=True)
-
-        # Re-trigger KaTeX for this block
-        st.markdown(
-            """
-            <script>
-                renderMathInElement(document.body, {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\\\(', right: '\\\\)', display: false}
-                    ]
-                });
-            </script>
-            """,
-            unsafe_allow_html=True,
-        )
-
         st.markdown(f"**Premium:** {is_premium}")
 
 
-# ============================================================
+# -----------------------------
 # DARK THEME — Neon Edition
-# ============================================================
+# -----------------------------
 def apply_dark_theme():
     st.markdown(
         """
@@ -151,9 +108,9 @@ def apply_dark_theme():
     )
 
 
-# ============================================================
+# -----------------------------
 # LIGHT THEME — Minimal Edition
-# ============================================================
+# -----------------------------
 def apply_light_theme():
     st.markdown(
         """
@@ -185,9 +142,9 @@ def apply_light_theme():
     )
 
 
-# ============================================================
+# -----------------------------
 # TOP BAR COMPONENT
-# ============================================================
+# -----------------------------
 def top_bar(title: str, role: str, logout_param: str):
     st.markdown(
         f"""
@@ -239,18 +196,18 @@ def top_bar(title: str, role: str, logout_param: str):
     )
 
 
-# ============================================================
+# -----------------------------
 # LOGOUT HANDLER
-# ============================================================
+# -----------------------------
 def logout():
     st.session_state.clear()
     st.markdown("<meta http-equiv='refresh' content='0; url=/' />", unsafe_allow_html=True)
     st.stop()
 
 
-# ============================================================
+# -----------------------------
 # ROLE VALIDATION HELPERS
-# ============================================================
+# -----------------------------
 def require_admin() -> Dict[str, Any]:
     admin = st.session_state.get("admin")
     if not admin:
