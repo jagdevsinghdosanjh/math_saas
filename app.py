@@ -1,4 +1,4 @@
-﻿﻿﻿﻿import streamlit as st
+﻿﻿import streamlit as st
 
 from math_saas.auth import logout, app_container_style
 from math_saas.admin.admin_app import run_admin
