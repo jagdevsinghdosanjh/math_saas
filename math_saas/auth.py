@@ -11,6 +11,33 @@ TEXT_MAIN = "#f8f9fa"
 ACCENT = "#00ff88"
 DANGER = "#ff4d6d"
 
+def app_container_style():
+    """Applies base container styling and enables MathJax rendering."""
+    st.markdown(
+        """
+        <style>
+        body {
+            background: linear-gradient(135deg, #050608 0%, #0a0c10 100%);
+            color: #f8f9fa;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+        .neon-card {
+            background: #121417;
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 0 18px rgba(0,255,136,0.25);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # ✅ Inject MathJax safely (minimum visible height = 1)
+    st.iframe(
+        src="https://cdn.jsdelivr.net/gh/jsd1973/mathjax-loader@main/mathjax.html",
+        height=1,  # must be ≥1
+    )
 # -----------------------------
 # UNIVERSAL CONTAINER STYLE
 # -----------------------------
