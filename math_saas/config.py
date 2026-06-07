@@ -1,4 +1,4 @@
-﻿# Placeholder for future configuration (e.g., Supabase keys, environment flags)
+# Placeholder for future configuration (e.g., Supabase keys, environment flags)
 import os
 from dotenv import load_dotenv
 
