@@ -1,5 +1,7 @@
 import streamlit as st
 from typing import Any, Dict
+from math_saas.utils.db import get_supabase
+from math_saas.utils.formatter import fix_math_rendering 
 
 # -----------------------------
 # THEME COLORS
@@ -12,33 +14,37 @@ DANGER = "#ff4d6d"
 # -----------------------------
 # UNIVERSAL CONTAINER STYLE
 # -----------------------------
-def app_container_style():
-    """Applies base container styling and enables MathJax rendering."""
-    st.markdown(
-        """
-        <style>
-        body {
-            background: linear-gradient(135deg, #050608 0%, #0a0c10 100%);
-            color: #f8f9fa;
-            font-family: 'Inter', 'Segoe UI', sans-serif;
-        }
-        .neon-card {
-            background: #121417;
-            border-radius: 14px;
-            padding: 20px;
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 0 18px rgba(0,255,136,0.25);
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
 
-    # ✅ Inject MathJax safely (minimum visible height = 1)
-    st.iframe(
-        src="https://cdn.jsdelivr.net/gh/jsd1973/mathjax-loader@main/mathjax.html",
-        height=1,  # must be ≥1
-    )
+def render_public_content():
+    """Render public content with native Streamlit LaTeX support."""
+    sb = get_supabase()
+
+    try:
+        res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
+        items_raw = res.data or []
+    except Exception as e:
+        st.error(f"Error fetching content: {e}")
+        return
+
+    items = [i for i in items_raw if isinstance(i, dict)]
+    if not items:
+        st.info("No public content available.")
+        return
+
+    for item in items:
+        title = str(item.get("title", "Untitled"))
+        body = str(item.get("body", ""))
+        is_premium = bool(item.get("is_premium", False))
+
+        st.markdown(f"### {title}")
+        st.write(body.split("\\["))  # optional debug
+
+        # ✅ Render math blocks natively
+        st.markdown(body, unsafe_allow_html=False)
+        st.latex(r"\frac{a}{b} \times \frac{c}{d} = \frac{a \times c}{b \times d}")
+
+        st.markdown(f"**Premium:** {is_premium}")
+
 
 # -----------------------------
 # DARK THEME — Neon Edition
