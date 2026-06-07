@@ -1,7 +1,6 @@
 import streamlit as st
 from typing import Any, Dict
 from math_saas.utils.db import get_supabase
-from math_saas.utils.formatter import fix_math_rendering #noqa
 import re
 
 # -----------------------------
@@ -12,40 +11,39 @@ TEXT_MAIN = "#f8f9fa"
 ACCENT = "#00ff88"
 DANGER = "#ff4d6d"
 
+# -----------------------------
+# UNIVERSAL CONTAINER STYLE
+# -----------------------------
 def app_container_style():
-    """Applies base container styling and enables MathJax rendering."""
+    """Applies base container styling."""
     st.markdown(
-        """
+        f"""
         <style>
-        body {
+        body {{
             background: linear-gradient(135deg, #050608 0%, #0a0c10 100%);
-            color: #f8f9fa;
+            color: {TEXT_MAIN};
             font-family: 'Inter', 'Segoe UI', sans-serif;
-        }
-        .neon-card {
+        }}
+        .neon-card {{
             background: #121417;
             border-radius: 14px;
             padding: 20px;
             border: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 0 18px rgba(0,255,136,0.25);
-        }
+        }}
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-    # ✅ Inject MathJax safely (minimum visible height = 1)
-    st.iframe(
-        src="https://cdn.jsdelivr.net/gh/jsd1973/mathjax-loader@main/mathjax.html",
-        height=1,  # must be ≥1
-    )
-# -----------------------------
-# UNIVERSAL CONTAINER STYLE
-# -----------------------------
 
+# -----------------------------
+# PUBLIC CONTENT RENDERER
+# -----------------------------
 def render_public_content():
-    """Render public content with native Streamlit LaTeX support."""
+    """Render public content with Streamlit-native LaTeX support."""
     sb = get_supabase()
+
     try:
         res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
         items = [i for i in (res.data or []) if isinstance(i, dict)]
@@ -58,18 +56,18 @@ def render_public_content():
         return
 
     for item in items:
-        title = item.get("title", "Untitled")
-        body = item.get("body", "")
-        is_premium = item.get("is_premium", False)
+        title = str(item.get("title", "Untitled"))
+        body_raw = item.get("body", "")
+        body = str(body_raw)  # ✅ ensure it's a string
+        is_premium = bool(item.get("is_premium", False))
 
         st.markdown(f"### {title}")
 
-        # Split text into math and non‑math segments
+        # ✅ Split text into math and non‑math segments
         parts = re.split(r"(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\]|\\\(.*?\\\))", body)
 
         for part in parts:
             if re.match(r"(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\]|\\\(.*?\\\))", part):
-                # Clean delimiters and render as LaTeX
                 clean = re.sub(r"^\$\$|^\$|\\\[|\\\(|\$\$|\\\]|\$|\\\)", "", part)
                 st.latex(clean.strip())
             else:
