@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components  # ✅ add this
 from typing import Any, Dict
 
 # -----------------------------
@@ -73,6 +74,37 @@ def app_container_style():
     """,
     unsafe_allow_html=True,
 )
+    components.html(
+    r"""
+    <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']], displayMath: [['\
+
+\[','\\]
+
+'], ['$$','$$']] },
+      svg: { fontCache: 'global' }
+    };
+    (function() {
+      if (!window.MathJaxLoaded) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+        script.async = true;
+        document.head.appendChild(script);
+        window.MathJaxLoaded = true;
+      }
+    })();
+    const renderMath = () => {
+      if (window.MathJax && window.MathJax.typesetPromise) MathJax.typesetPromise();
+    };
+    const observer = new MutationObserver(renderMath);
+    observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("DOMContentLoaded", renderMath);
+    </script>
+    """,
+    height=0,
+)
+
 
 # -----------------------------
 # DARK THEME — Neon Edition
