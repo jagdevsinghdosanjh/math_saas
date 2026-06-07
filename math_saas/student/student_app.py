@@ -16,10 +16,6 @@ from math_saas.utils.db import get_supabase
 # -----------------------------
 # NEW: Synced Chapters Renderer
 # -----------------------------
-import streamlit as st
-from math_saas.utils.db import get_supabase
-
-
 def render_synced_chapters():
     """Display synced chapters from Supabase sync_chapters table safely, with quiz links."""
     sb = get_supabase()
