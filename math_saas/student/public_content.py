@@ -14,47 +14,83 @@ def render_public_content():
         return
 
     items = [i for i in items_raw if isinstance(i, dict)]
-
     if not items:
         st.info("No public content available.")
         return
 
     for item in items:
         title = str(item.get("title", "Untitled"))
-        body = str(item.get("body", ""))
+        body = fix_math_rendering(str(item.get("body", "")))
         is_premium = bool(item.get("is_premium", False))
-
-        # ✅ Auto‑fix math rendering and preserve LaTeX syntax
-        # body = fix_math_rendering(body).replace("\\\\", "\\")
-        body = fix_math_rendering(body)
-        st.markdown(body, unsafe_allow_html=True)
-
 
         st.markdown(
             f"""
             <div class="neon-card" style="margin-bottom:16px;">
                 <h4>{title}</h4>
-                <p style="color:#a0a6b1; white-space:pre-wrap;">{body}</p>
+                <div style="color:#a0a6b1; white-space:pre-wrap;">{body}</div>
                 <p><strong>Premium:</strong> {is_premium}</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    # ✅ Trigger MathJax rendering after content load
-    st.markdown(
-        """
-        <script>
-        const renderMath = () => {
-          if (window.MathJax) MathJax.typesetPromise();
-        };
-        const observer = new MutationObserver(renderMath);
-        observer.observe(document.body, { childList: true, subtree: true });
-        renderMath();
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
+# import streamlit as st
+# from math_saas.utils.db import get_supabase
+# from math_saas.utils.formatter import fix_math_rendering
+
+# def render_public_content():
+#     """Render public content with math auto‑formatting and safe type handling."""
+#     sb = get_supabase()
+
+#     try:
+#         res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
+#         items_raw = res.data or []
+#     except Exception as e:
+#         st.error(f"Error fetching content: {e}")
+#         return
+
+#     items = [i for i in items_raw if isinstance(i, dict)]
+
+#     if not items:
+#         st.info("No public content available.")
+#         return
+
+#     for item in items:
+#         title = str(item.get("title", "Untitled"))
+#         body = str(item.get("body", ""))
+#         is_premium = bool(item.get("is_premium", False))
+
+#         # ✅ Auto‑fix math rendering and preserve LaTeX syntax
+#         # body = fix_math_rendering(body).replace("\\\\", "\\")
+#         body = fix_math_rendering(body)
+#         st.markdown(body, unsafe_allow_html=True)
+
+
+#         st.markdown(
+#             f"""
+#             <div class="neon-card" style="margin-bottom:16px;">
+#                 <h4>{title}</h4>
+#                 <p style="color:#a0a6b1; white-space:pre-wrap;">{body}</p>
+#                 <p><strong>Premium:</strong> {is_premium}</p>
+#             </div>
+#             """,
+#             unsafe_allow_html=True,
+#         )
+
+#     # ✅ Trigger MathJax rendering after content load
+#     st.markdown(
+#         """
+#         <script>
+#         const renderMath = () => {
+#           if (window.MathJax) MathJax.typesetPromise();
+#         };
+#         const observer = new MutationObserver(renderMath);
+#         observer.observe(document.body, { childList: true, subtree: true });
+#         renderMath();
+#         </script>
+#         """,
+#         unsafe_allow_html=True,
+#     )
 
 # import streamlit as st
 # from math_saas.utils.db import get_supabase

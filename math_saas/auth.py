@@ -41,21 +41,26 @@ def app_container_style():
     <script>
     // --- MathJax Configuration ---
     window.MathJax = {
-      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']], displayMath: [['\\[','\\]'], ['$$','$$']] },
       svg: { fontCache: 'global' }
     };
 
-    // --- Load MathJax ---
+    // --- Load MathJax dynamically ---
     (function() {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
-      script.async = true;
-      document.head.appendChild(script);
+      if (!window.MathJaxLoaded) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+        script.async = true;
+        document.head.appendChild(script);
+        window.MathJaxLoaded = true;
+      }
     })();
 
     // --- Re-render MathJax whenever Streamlit updates the DOM ---
     const renderMath = () => {
-      if (window.MathJax) MathJax.typesetPromise();
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        MathJax.typesetPromise();
+      }
     };
 
     // Observe DOM changes (Streamlit reruns, tab switches, etc.)
@@ -68,8 +73,6 @@ def app_container_style():
     """,
     unsafe_allow_html=True,
 )
-
-
 
 # -----------------------------
 # DARK THEME — Neon Edition
