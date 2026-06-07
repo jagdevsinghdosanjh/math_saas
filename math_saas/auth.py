@@ -1,7 +1,6 @@
 import streamlit as st
 from typing import Any, Dict
 from math_saas.utils.db import get_supabase
-import re
 
 # -----------------------------
 # THEME COLORS
@@ -16,7 +15,7 @@ DANGER = "#ff4d6d"
 # UNIVERSAL CONTAINER STYLE
 # -----------------------------
 def app_container_style():
-    """Applies base container styling."""
+    """Applies base container styling and loads MathJax globally."""
     st.markdown(
         f"""
         <style>
@@ -37,18 +36,33 @@ def app_container_style():
         unsafe_allow_html=True,
     )
 
-    # ✅ Minimal valid iframe height
-    st.iframe(
-        src="https://cdn.jsdelivr.net/gh/jsd1973/mathjax-loader@main/mathjax.html",
-        height=1,  # must be ≥1
+    # ✅ Inject MathJax globally for inline and block math rendering
+    st.markdown(
+        """
+        <script type="text/x-mathjax-config">
+          MathJax.Hub.Config({
+            tex2jax: {
+              inlineMath: [['$','$'], ['\\(','\\)']],
+              displayMath: [['$$','$$'], ['\
+
+\[','\\]
+
+']],
+              processEscapes: true
+            }
+          });
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS_HTML"></script>
+        """,
+        unsafe_allow_html=True,
     )
 
 
 # -----------------------------
 # PUBLIC CONTENT RENDERER
 # -----------------------------
-
 def render_public_content():
+    """Render public content with MathJax-enabled Markdown."""
     sb = get_supabase()
     res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
     items = [i for i in (res.data or []) if isinstance(i, dict)]
@@ -59,25 +73,9 @@ def render_public_content():
         is_premium = bool(item.get("is_premium", False))
 
         st.markdown(f"### {title}")
-
-        # ✅ Clean up escaped LaTeX and delimiters
-        body = body.replace("\\\\", "\\")           # turn \\frac → \frac
-        body = re.sub(r"\\\(", "$", body)           # convert \( → $
-        body = re.sub(r"\\\)", "$", body)           # convert \) → $
-        body = re.sub(r"\\\[", "$$", body)          # convert \[ → $$
-        body = re.sub(r"\\\]", "$$", body)          # convert \] → $$
-
-        # ✅ Split into math and non‑math segments
-        parts = re.split(r"(\$\$.*?\$\$|\$.*?\$)", body)
-
-        for part in parts:
-            if re.match(r"(\$\$.*?\$\$|\$.*?\$)", part):
-                clean = re.sub(r"^\$\$|^\$|\$\$|\$", "", part)
-                st.latex(clean.strip())
-            else:
-                st.markdown(part)
-
+        st.markdown(body, unsafe_allow_html=True)
         st.markdown(f"**Premium:** {is_premium}")
+
 
 # -----------------------------
 # DARK THEME — Neon Edition
@@ -227,4 +225,3 @@ def require_student() -> Dict[str, Any]:
         st.error("Please login as student.")
         st.stop()
     return student
-
