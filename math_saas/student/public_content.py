@@ -17,9 +17,9 @@ def render_public_content():
         st.error(f"Error fetching content: {e}")
         return
 
-    # Debug: verify data fetched from Supabase
-    debug_res = sb.table("public_content").select("title, created_at").execute()
-    st.write("DEBUG:", debug_res.data)
+    # # Debug: verify data fetched from Supabase
+    # debug_res = sb.table("public_content").select("title, created_at").execute()
+    # st.write("DEBUG:", debug_res.data)
 
     # Only keep dict items
     items = [i for i in raw_items if isinstance(i, dict)]
