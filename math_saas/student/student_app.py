@@ -17,7 +17,6 @@ from math_saas.utils.db import get_supabase
 # NEW: Synced Chapters Renderer
 # -----------------------------
 def render_synced_chapters():
-    """Display synced chapters from Supabase sync_chapters table safely, with quiz links."""
     sb = get_supabase()
     try:
         res = sb.table("sync_chapters").select("*").eq("is_published", True).order("created_at", desc=True).execute()
@@ -31,7 +30,6 @@ def render_synced_chapters():
         return
 
     st.subheader("📘 Synced Chapters (CBSE 9th Math)")
-
     for ch in chapters:
         if not isinstance(ch, dict):
             continue
@@ -45,11 +43,8 @@ def render_synced_chapters():
             if isinstance(url, str) and url.strip():
                 st.markdown(f"[View Chapter]({url})", unsafe_allow_html=True)
 
-            # ✅ Add “Start Quiz” button
             quiz_url = f"https://quiz-byjsdasr1973.streamlit.app/?chapter={title.replace(' ', '%20')}"
-            if st.button(f"Start Quiz for {title}", key=f"quiz_{title}"):
-                st.markdown(f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>', unsafe_allow_html=True)
-                # st.markdown(f"[Open Quiz Portal]({quiz_url})", unsafe_allow_html=True)
+            st.markdown(f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>', unsafe_allow_html=True)
 
 
 # -----------------------------
