@@ -47,7 +47,9 @@ def app_container_style():
                 {left: '$$', right: '$$', display: true},
                 {left: '$', right: '$', display: false},
                 {left: '\\\\(', right: '\\\\)', display: false},
-                {left: '\\\\[', right: '\\\\]
+                {left: '\\\
+
+\[', right: '\\\\]
 
 ', display: true}
               ]
