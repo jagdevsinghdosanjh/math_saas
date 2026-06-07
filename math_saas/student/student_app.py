@@ -1,4 +1,5 @@
 import streamlit as st
+from supabase import create_client
 from math_saas.student.public_content import render_public_content
 from math_saas.auth import (
     require_student,
@@ -10,14 +11,32 @@ from math_saas.student.subscriptions_page import render_subscriptions_page
 from math_saas.student.billing_history import render_billing_history
 from math_saas.student.dashboard import render_dashboard
 from math_saas.student.chapters_page import render_chapters_page
-from math_saas.utils.db import get_supabase
 
 
 # -----------------------------
-# NEW: Synced Chapters Renderer
+# SAFE SUPABASE CONNECTION
+# -----------------------------
+def get_supabase():
+    """Connect to Supabase using anon key for student access."""
+    try:
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["anon_key"]
+        return create_client(url, key)
+    except Exception as e:
+        st.error(f"Supabase connection error: {e}")
+        return None
+
+
+# -----------------------------
+# SYNCHRONIZED CHAPTERS RENDERER
 # -----------------------------
 def render_synced_chapters():
+    """Display synced chapters from Supabase sync_chapters table safely."""
     sb = get_supabase()
+    if sb is None:
+        st.warning("Unable to connect to Supabase.")
+        return
+
     try:
         res = sb.table("sync_chapters").select("*").eq("is_published", True).order("created_at", desc=True).execute()
         chapters = res.data or []
@@ -51,11 +70,12 @@ def render_synced_chapters():
 # STUDENT PORTAL MAIN FUNCTION
 # -----------------------------
 def run_student():
+    """Main entry point for the Student Portal."""
     app_container_style()
 
     # Safe query param access
     params = st.query_params
-    if params.get("student_logout") == "true":
+    if isinstance(params, dict) and params.get("student_logout") == "true":
         logout()
 
     require_student()
@@ -74,21 +94,18 @@ def run_student():
         unsafe_allow_html=True,
     )
 
-    # TAB_LABELS = ["Dashboard", "Chapters", "Subscription", "Billing", "Math & News"]
+    # Tabs
     TAB_LABELS = [
-    "Dashboard",
-    "Chapters",
-    "Synced Chapters & Quiz",  # ✅ new tab
-    "Subscription",
-    "Billing",
-    "Math & News"
-]
+        "Dashboard",
+        "Chapters",
+        "Synced Chapters & Quiz",
+        "Subscription",
+        "Billing",
+        "Math & News",
+    ]
 
     tab_dashboard, tab_chapters, tab_synced, tab_subs, tab_billing, tab_public = st.tabs(TAB_LABELS)
 
-    # tab_dashboard, tab_chapters, tab_subs, tab_billing, tab_public = st.tabs(TAB_LABELS)
-
-    # Routing dictionary for cleaner logic
     ROUTES = {
         "Dashboard": render_dashboard,
         "Chapters": render_chapters_page,
@@ -101,17 +118,17 @@ def run_student():
     with tab_dashboard:
         try:
             ROUTES["Dashboard"]()
-        except Exception:
-            st.info("Dashboard coming soon.")
+        except Exception as e:
+            st.info(f"Dashboard coming soon. ({e})")
 
     # Chapters
     with tab_chapters:
         try:
             ROUTES["Chapters"]()
             st.markdown("---")
-            render_synced_chapters()  # ✅ Added new synced chapters section
-        except Exception:
-            st.info("Chapters page coming soon.")
+            render_synced_chapters()
+        except Exception as e:
+            st.info(f"Chapters page coming soon. ({e})")
 
     # Synced Chapters & Quiz
     with tab_synced:
@@ -122,12 +139,21 @@ def run_student():
 
     # Subscription
     with tab_subs:
-        ROUTES["Subscription"]()
+        try:
+            ROUTES["Subscription"]()
+        except Exception as e:
+            st.info(f"Subscription page coming soon. ({e})")
 
     # Billing
     with tab_billing:
-        ROUTES["Billing"]()
+        try:
+            ROUTES["Billing"]()
+        except Exception as e:
+            st.info(f"Billing page coming soon. ({e})")
 
     # Public content
     with tab_public:
-        ROUTES["Math & News"]()
+        try:
+            ROUTES["Math & News"]()
+        except Exception as e:
+            st.info(f"Math & News page coming soon. ({e})")
