@@ -1,14 +1,14 @@
 import streamlit as st
 from typing import Any, Dict
 from math_saas.utils.db import get_supabase
-from math_saas.utils.formatter import fix_math_rendering 
+from math_saas.utils.formatter import fix_math_rendering #noqa
 
 # -----------------------------
 # THEME COLORS
 # -----------------------------
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
-ACCENT = "#13b167"
+ACCENT = "#00ff88"
 DANGER = "#ff4d6d"
 
 # -----------------------------
