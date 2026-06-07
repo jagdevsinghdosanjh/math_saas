@@ -2,6 +2,7 @@ import streamlit as st
 from typing import Any, Dict
 from math_saas.utils.db import get_supabase
 from math_saas.utils.formatter import fix_math_rendering #noqa
+import re
 
 # -----------------------------
 # THEME COLORS
@@ -45,30 +46,34 @@ def app_container_style():
 def render_public_content():
     """Render public content with native Streamlit LaTeX support."""
     sb = get_supabase()
-
     try:
         res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
-        items_raw = res.data or []
+        items = [i for i in (res.data or []) if isinstance(i, dict)]
     except Exception as e:
         st.error(f"Error fetching content: {e}")
         return
 
-    items = [i for i in items_raw if isinstance(i, dict)]
     if not items:
         st.info("No public content available.")
         return
 
     for item in items:
-        title = str(item.get("title", "Untitled"))
-        body = str(item.get("body", ""))
-        is_premium = bool(item.get("is_premium", False))
+        title = item.get("title", "Untitled")
+        body = item.get("body", "")
+        is_premium = item.get("is_premium", False)
 
         st.markdown(f"### {title}")
-        st.write(body.split("\\["))  # optional debug
 
-        # ✅ Render math blocks natively
-        st.markdown(body, unsafe_allow_html=False)
-        st.latex(r"\frac{a}{b} \times \frac{c}{d} = \frac{a \times c}{b \times d}")
+        # Split text into math and non‑math segments
+        parts = re.split(r"(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\]|\\\(.*?\\\))", body)
+
+        for part in parts:
+            if re.match(r"(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\]|\\\(.*?\\\))", part):
+                # Clean delimiters and render as LaTeX
+                clean = re.sub(r"^\$\$|^\$|\\\[|\\\(|\$\$|\\\]|\$|\\\)", "", part)
+                st.latex(clean.strip())
+            else:
+                st.markdown(part)
 
         st.markdown(f"**Premium:** {is_premium}")
 
