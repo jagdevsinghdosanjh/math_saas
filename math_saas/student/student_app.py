@@ -79,8 +79,19 @@ def run_student():
         unsafe_allow_html=True,
     )
 
-    TAB_LABELS = ["Dashboard", "Chapters", "Subscription", "Billing", "Math & News"]
-    tab_dashboard, tab_chapters, tab_subs, tab_billing, tab_public = st.tabs(TAB_LABELS)
+    # TAB_LABELS = ["Dashboard", "Chapters", "Subscription", "Billing", "Math & News"]
+    TAB_LABELS = [
+    "Dashboard",
+    "Chapters",
+    "Synced Chapters & Quiz",  # ✅ new tab
+    "Subscription",
+    "Billing",
+    "Math & News"
+]
+
+    tab_dashboard, tab_chapters, tab_synced, tab_subs, tab_billing, tab_public = st.tabs(TAB_LABELS)
+
+    # tab_dashboard, tab_chapters, tab_subs, tab_billing, tab_public = st.tabs(TAB_LABELS)
 
     # Routing dictionary for cleaner logic
     ROUTES = {
