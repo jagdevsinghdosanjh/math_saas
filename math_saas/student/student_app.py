@@ -118,6 +118,13 @@ def run_student():
         except Exception:
             st.info("Chapters page coming soon.")
 
+    # Synced Chapters & Quiz
+    with tab_synced:
+        try:
+            render_synced_chapters()
+        except Exception as e:
+            st.info(f"Synced chapters not available. ({e})")
+
     # Subscription
     with tab_subs:
         ROUTES["Subscription"]()
