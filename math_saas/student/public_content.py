@@ -9,6 +9,9 @@ def render_public_content():
     try:
         res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
         items_raw = res.data or []
+        st.write("Supabase client:", sb)
+        st.write("Query result:", res)
+
     except Exception as e:
         st.error(f"Error fetching content: {e}")
         return
