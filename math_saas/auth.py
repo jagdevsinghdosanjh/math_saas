@@ -47,20 +47,12 @@ def app_container_style():
 # -----------------------------
 # PUBLIC CONTENT RENDERER
 # -----------------------------
+
 def render_public_content():
-    """Render public content with Streamlit-native LaTeX support."""
+    """Render public content with proper LaTeX formatting."""
     sb = get_supabase()
-
-    try:
-        res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
-        items = [i for i in (res.data or []) if isinstance(i, dict)]
-    except Exception as e:
-        st.error(f"Error fetching content: {e}")
-        return
-
-    if not items:
-        st.info("No public content available.")
-        return
+    res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
+    items = [i for i in (res.data or []) if isinstance(i, dict)]
 
     for item in items:
         title = str(item.get("title", "Untitled"))
@@ -69,12 +61,17 @@ def render_public_content():
 
         st.markdown(f"### {title}")
 
-        # ✅ Split text into math and non‑math segments
-        parts = re.split(r"(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\]|\\\(.*?\\\))", body)
+        # ✅ Remove stray backslashes before $$ and normalize math blocks
+        body = re.sub(r"\\\s*\$\$", "$$", body)
+        body = re.sub(r"\$\$\s*\\", "$$", body)
+        body = re.sub(r"\\\$", "$", body)
+
+        # ✅ Split into math and non‑math segments
+        parts = re.split(r"(\$\$.*?\$\$|\$.*?\$)", body)
 
         for part in parts:
-            if re.match(r"(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\]|\\\(.*?\\\))", part):
-                clean = re.sub(r"^\$\$|^\$|\\\[|\\\(|\$\$|\\\]|\$|\\\)", "", part)
+            if re.match(r"(\$\$.*?\$\$|\$.*?\$)", part):
+                clean = re.sub(r"^\$\$|^\$|\$\$|\$", "", part)
                 st.latex(clean.strip())
             else:
                 st.markdown(part)
