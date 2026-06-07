@@ -37,24 +37,32 @@ def app_container_style():
 
     # ✅ Load MathJax and trigger rendering after content loads
     st.markdown(
-        """
-        <script>
-        window.MathJax = {
-          tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
-          svg: { fontCache: 'global' }
-        };
-        </script>
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-        <script>
-        document.addEventListener("DOMContentLoaded", () => {
-          if (window.MathJax) {
-            MathJax.typesetPromise();
-          }
-        });
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
+    """
+    <script>
+    // Configure MathJax
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      svg: { fontCache: 'global' }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+    <script>
+    // Re-render math whenever Streamlit updates the DOM
+    const renderMath = () => {
+      if (window.MathJax) MathJax.typesetPromise();
+    };
+
+    // Observe DOM changes (Streamlit reruns, tab switches, etc.)
+    const observer = new MutationObserver(renderMath);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Initial render
+    document.addEventListener("DOMContentLoaded", renderMath);
+    </script>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 # -----------------------------
