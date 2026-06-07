@@ -1,4 +1,5 @@
 import streamlit as st
+from math_saas.admin.sync_chapters import sync_chapters
 
 from math_saas.auth import (
     require_admin,
@@ -18,16 +19,31 @@ from math_saas.admin.settings import render as render_settings
 
 
 # -----------------------------
+# ADMIN SYNC BUTTON
+# -----------------------------
+def render_admin_sync():
+    """Admin tool to sync CBSE chapters into Supabase."""
+    st.subheader("🔄 Sync CBSE Chapters to Supabase")
+
+    if st.button("Start Sync"):
+        with st.spinner("Syncing chapters..."):
+            try:
+                sync_chapters()
+                st.success("✅ Chapters synced successfully into Supabase!")
+            except Exception as e:
+                st.error(f"❌ Sync failed: {e}")
+
+
+# -----------------------------
 # MAIN ADMIN PANEL
 # -----------------------------
 def run_admin():
     """Main entry point for the Admin Panel."""
-    # Authentication
     require_admin()
 
     # Safe query param access
     params = st.query_params
-    if params.get("admin_logout") == "true":
+    if isinstance(params, dict) and params.get("admin_logout") == "true":
         logout()
 
     # Top bar
@@ -46,6 +62,7 @@ def run_admin():
         "Videos",
         "Content Manager",
         "Settings",
+        "Sync Chapters",  # ✅ fixed spelling
     ]
 
     menu = st.sidebar.radio(
@@ -65,80 +82,11 @@ def run_admin():
         "Videos": render_videos,
         "Content Manager": render_content_admin,
         "Settings": render_settings,
+        "Sync Chapters": render_admin_sync,  # ✅ fixed route
     }
 
-    # Render selected page
-    ROUTES.get(menu, render_analytics)()
-
-# import streamlit as st
-
-# from math_saas.auth import (
-#     require_admin,
-#     logout,
-#     app_container_style,
-#     top_bar,
-# )
-
-# from math_saas.admin.analytics import render as render_analytics
-# from math_saas.admin.subscriptions_admin import render as render_subscriptions
-# from math_saas.admin.billing import render as render_billing
-# from math_saas.admin.chapters import render as render_chapters
-# from math_saas.admin.users import render as render_users
-# from math_saas.admin.pdf_notes import render as render_pdf_notes
-# from math_saas.admin.videos import render as render_videos
-# from math_saas.admin.content_admin import render as render_content_admin
-# from math_saas.admin.settings import render as render_settings
-
-
-# def run_admin():
-#     """Main entry point for the Admin Panel."""
-#     app_container_style()
-
-#     # Safe query param access
-#     params = st.query_params
-#     if params.get("admin_logout") == "true":
-#         logout()
-
-#     # Authentication
-#     require_admin()
-
-#     # Top bar
-#     top_bar("Math Hub Admin Panel", "Admin", "admin_logout")
-
-#     # Navigation items
-#     NAV_ITEMS = [
-#         "Analytics",
-#         "Subscriptions",
-#         "Billing",
-#         "Chapters",
-#         "Users",
-#         "PDF Notes",
-#         "Videos",
-#         "Content Manager",
-#         "Settings",
-#     ]
-
-#     # Sidebar navigation
-#     with st.sidebar:
-#         st.markdown("### Navigation")
-#         menu = st.radio(
-#             "Select section",
-#             NAV_ITEMS,
-#             label_visibility="collapsed",
-#         )
-
-#     # Route mapping
-#     ROUTES = {
-#         "Analytics": render_analytics,
-#         "Subscriptions": render_subscriptions,
-#         "Billing": render_billing,
-#         "Chapters": render_chapters,
-#         "Users": render_users,
-#         "PDF Notes": render_pdf_notes,
-#         "Videos": render_videos,
-#         "Content Manager": render_content_admin,
-#         "Settings": render_settings,
-#     }
-
-#     # Render selected page
-#     ROUTES[menu]()
+    # Render selected page safely
+    try:
+        ROUTES.get(menu, render_analytics)()
+    except Exception as e:
+        st.error(f"Error loading section: {e}")
