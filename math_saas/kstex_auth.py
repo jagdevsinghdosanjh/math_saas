@@ -15,7 +15,7 @@ DANGER = "#ff4d6d"
 # UNIVERSAL CONTAINER STYLE
 # -----------------------------
 def app_container_style():
-    """Applies base container styling and loads KaTeX globally."""
+    """Applies base container styling and loads MathJax globally."""
     st.markdown(
         f"""
         <style>
@@ -36,25 +36,19 @@ def app_container_style():
         unsafe_allow_html=True,
     )
 
-    # ✅ Inject KaTeX for math rendering
+    # ✅ Inject MathJax globally for inline and block math rendering
     st.markdown(
         """
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
-            onload="renderMathInElement(document.body, {
-              delimiters: [
-                {left: '$$', right: '$$', display: true},
-                {left: '$', right: '$', display: false},
-                {left: '\\\\(', right: '\\\\)', display: false},
-                {left: '\\\\[', right: '\\\\]
-
-', display: true}
-              ]
-            });">
+        <script type="text/x-mathjax-config">
+          MathJax.Hub.Config({
+            tex2jax: {
+              inlineMath: [['$','$'], ['\\(','\\)']],
+              displayMath: [['$$','$$'], ['\\[','\\]']],
+              processEscapes: true
+            }
+          });
         </script>
-        """,
-        unsafe_allow_html=True,
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS_HTML"></script>""",unsafe_allow_html=True,
     )
 
 
@@ -62,7 +56,7 @@ def app_container_style():
 # PUBLIC CONTENT RENDERER
 # -----------------------------
 def render_public_content():
-    """Render public content with KaTeX-enabled Markdown."""
+    """Render public content with MathJax-enabled Markdown."""
     sb = get_supabase()
     res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
     items = [i for i in (res.data or []) if isinstance(i, dict)]
