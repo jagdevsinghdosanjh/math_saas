@@ -5,6 +5,7 @@ from math_saas.admin.admin_app import run_admin
 from math_saas.student.student_app import run_student
 from math_saas.utils.db import get_supabase
 
+
 # -----------------------------
 # GENERIC LOGIN HANDLER
 # -----------------------------
