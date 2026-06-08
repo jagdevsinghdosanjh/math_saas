@@ -1,200 +1,205 @@
 import streamlit as st
+from math_saas.auth import logout, apply_dark_theme, apply_light_theme
+from math_saas.admin.admin_app import run_admin
+from math_saas.student.student_app import run_student
+from math_saas.student.public_content import render_public_content
+from math_saas.utils.db import get_supabase
 
-st.set_page_config(
-    page_title="Math Hub – Research‑grade Math Workspace",
-    page_icon="🧠",
-    layout="wide"
-)
+# ---------------------------------------------------------
+# GENERIC LOGIN HANDLER
+# ---------------------------------------------------------
+def handle_login(email, password, role):
+    sb = get_supabase()
 
-# ---------- Custom CSS ----------
-st.markdown("""
-<style>
-body {
-    background-color: #050816;
-}
-.block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 0rem;
-}
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.4rem 0;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.nav-left {
-    display: flex;
-    align-items: baseline;
-    gap: 0.4rem;
-}
-.brand-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #ffffff;
-}
-.brand-sub {
-    font-size: 0.8rem;
-    color: #9ca3af;
-}
-.nav-right {
-    display: flex;
-    gap: 1.5rem;
-    font-size: 0.9rem;
-    color: #e5e7eb;
-}
-.nav-link {
-    cursor: pointer;
-    opacity: 0.85;
-}
-.nav-link:hover {
-    opacity: 1;
-}
-.hero-title {
-    font-size: 2.4rem;
-    font-weight: 800;
-    color: #ffffff;
-}
-.hero-subtitle {
-    font-size: 1.05rem;
-    color: #d1d5db;
-    margin-top: 0.6rem;
-}
-.hero-tag {
-    display: inline-block;
-    padding: 0.15rem 0.6rem;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    background: rgba(59,130,246,0.12);
-    color: #93c5fd;
-    border: 1px solid rgba(59,130,246,0.4);
-}
-.hero-card {
-    background: radial-gradient(circle at top left, #1f2937 0, #020617 55%);
-    border-radius: 1.2rem;
-    padding: 1.4rem 1.6rem;
-    border: 1px solid rgba(148,163,184,0.25);
-    box-shadow: 0 18px 45px rgba(15,23,42,0.9);
-}
-.hero-metric-label {
-    font-size: 0.75rem;
-    color: #9ca3af;
-}
-.hero-metric-value {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #e5e7eb;
-}
-.cta-row {
-    display: flex;
-    gap: 0.8rem;
-    margin-top: 1.2rem;
-}
-.cta-primary {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: #020617 !important;
-    font-weight: 600;
-}
-.cta-secondary {
-    border: 1px solid rgba(148,163,184,0.6);
-    color: #e5e7eb !important;
-    background: transparent;
-}
-.small-note {
-    font-size: 0.75rem;
-    color: #9ca3af;
-    margin-top: 0.6rem;
-}
-</style>
-""", unsafe_allow_html=True)
+    try:
+        res = sb.auth.sign_in_with_password({"email": email, "password": password})
+    except Exception:
+        st.error("Invalid login credentials")
+        return None
 
-# ---------- Top Nav ----------
-with st.container():
-    st.markdown('<div class="navbar">', unsafe_allow_html=True)
-    col_nav_left, col_nav_right = st.columns([2, 3])
+    user = res.user
+    if not user:
+        st.error("Invalid login credentials")
+        return None
 
-    with col_nav_left:
-        st.markdown(
-            """
-            <div class="nav-left">
-                <span class="brand-title">Math Hub</span>
-                <span class="brand-sub">Research‑grade math workspace</span>
-            </div>
-            """,
-            unsafe_allow_html=True
+    # Fetch profile
+    try:
+        profile_raw = (
+            sb.table("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single()
+            .execute()
+            .data
         )
+    except Exception:
+        st.error("Profile not found or RLS blocked access.")
+        return None
 
-    with col_nav_right:
-        st.markdown(
-            """
-            <div class="nav-right">
-                <span class="nav-link">Pricing</span>
-                <span class="nav-link">Features</span>
-                <span class="nav-link">Help</span>
-                <span class="nav-link">Sign in</span>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    st.markdown('</div>', unsafe_allow_html=True)
+    profile = profile_raw if isinstance(profile_raw, dict) else None
+    if not profile:
+        st.error("Profile not found.")
+        return None
 
-st.write("")  # small spacer
+    # Role validation
+    if role == "admin" and not profile.get("is_admin", False):
+        st.error("You are not an admin.")
+        return None
 
-# ---------- Hero Section ----------
-col_left, col_right = st.columns([1.4, 1.1])
+    if role == "student" and profile.get("is_admin", False):
+        st.error("Students must login from Student Login.")
+        return None
 
-with col_left:
-    st.markdown('<span class="hero-tag">For serious learners & educators</span>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-title">The research‑grade workspace<br>for school & competitive math.</div>', unsafe_allow_html=True)
+    return profile
+
+
+# ---------------------------------------------------------
+# ADMIN LOGIN FORM
+# ---------------------------------------------------------
+def admin_login_form():
+    st.markdown("<h3>Admin Login</h3>", unsafe_allow_html=True)
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login as Admin"):
+        profile = handle_login(email, password, role="admin")
+        if profile:
+            st.session_state["admin"] = profile
+            st.success("Admin login successful.")
+            st.rerun()
+
+
+# ---------------------------------------------------------
+# STUDENT LOGIN FORM
+# ---------------------------------------------------------
+def student_login_form():
+    st.markdown("<h3>Student Login</h3>", unsafe_allow_html=True)
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login as Student"):
+        profile = handle_login(email, password, role="student")
+        if profile:
+            st.session_state["student"] = profile
+            st.success("Student login successful.")
+            st.rerun()
+
+
+# ---------------------------------------------------------
+# MAIN APP (NEW UI + OLD WORKING LOGIN LOGIC)
+# ---------------------------------------------------------
+def main():
+
+    # --------------------------
+    # THEME SELECTOR
+    # --------------------------
+    theme_choice = st.radio(
+        "Choose Theme:",
+        ["Dark (Neon)", "Light"],
+        horizontal=True
+    )
+
+    if theme_choice == "Light":
+        apply_light_theme()
+    else:
+        apply_dark_theme()
+
+    # --------------------------
+    # LOGOUT HANDLING
+    # --------------------------
+    params = st.query_params
+    if params.get("admin_logout") == "true":
+        logout()
+    if params.get("student_logout") == "true":
+        logout()
+
+    # --------------------------
+    # SESSION ROUTING
+    # --------------------------
+    admin_data = st.session_state.get("admin")
+    student_data = st.session_state.get("student")
+
+    if isinstance(admin_data, dict):
+        run_admin()
+        return
+
+    if isinstance(student_data, dict):
+        run_student()
+        return
+
+    # --------------------------
+    # NEW LANDING PAGE UI
+    # --------------------------
     st.markdown(
         """
-        <div class="hero-subtitle">
-        Powered by structured chapter maps, daily math posts, and curated problem sets for Boards & JEE.
+        <div style="padding-top:1rem;">
+            <h1 style="color:white; font-size:2.4rem; font-weight:800;">Math Hub</h1>
+            <p style="color:#9ca3af; margin-top:-10px;">Research‑grade math workspace</p>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.markdown('<div class="cta-row">', unsafe_allow_html=True)
-    col_cta1, col_cta2 = st.columns([1, 1])
-
-    with col_cta1:
-        student_click = st.button("Enter as Student", use_container_width=True, type="primary")
-    with col_cta2:
-        admin_click = st.button("Enter as Admin", use_container_width=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
     st.markdown(
-        '<div class="small-note">No clutter. Just math, progress, and a clear path through your syllabus.</div>',
+        """
+        <div style="margin-top:1rem;">
+            <span style="
+                display:inline-block;
+                padding:4px 10px;
+                border-radius:999px;
+                background:rgba(59,130,246,0.12);
+                border:1px solid rgba(59,130,246,0.4);
+                color:#93c5fd;
+                font-size:0.75rem;
+                letter-spacing:0.06em;
+                text-transform:uppercase;">
+                For serious learners & educators
+            </span>
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
-with col_right:
-    st.markdown('<div class="hero-card">', unsafe_allow_html=True)
-    st.markdown("#### Today in Math Hub")
-    st.markdown('<span class="hero-metric-label">Daily math post</span>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-metric-value">Vector Algebra · 3 curated problems</div>', unsafe_allow_html=True)
-    st.write("")
-    st.markdown('<span class="hero-metric-label">Active students</span>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-metric-value">128</div>', unsafe_allow_html=True)
-    st.write("")
-    st.markdown('<span class="hero-metric-label">Chapters mapped</span>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-metric-value">42 / 52</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <h2 style="color:white; font-size:2rem; font-weight:700; margin-top:0.8rem;">
+            The research‑grade workspace<br>for school & competitive math.
+        </h2>
+        <p style="color:#d1d5db; font-size:1rem;">
+            Powered by structured chapter maps, daily math posts, and curated problem sets for Boards & JEE.
+        </p>
+        """,
+        unsafe_allow_html=True
+    )
 
-# ---------- Routing ----------
-if "role" not in st.session_state:
-    st.session_state.role = None
+    # --------------------------
+    # LOGIN BUTTONS
+    # --------------------------
+    col1, col2 = st.columns(2)
 
-if student_click:
-    st.session_state.role = "student"
-if admin_click:
-    st.session_state.role = "admin"
+    with col1:
+        if st.button("Admin Login", use_container_width=True):
+            st.session_state["login_mode"] = "admin"
+            st.rerun()
 
-if st.session_state.role == "student":
-    st.switch_page("pages/student_portal.py")  # adjust path to your file
-elif st.session_state.role == "admin":
-    st.switch_page("pages/admin_portal.py")    # adjust path to your file
+    with col2:
+        if st.button("Student Login", use_container_width=True):
+            st.session_state["login_mode"] = "student"
+            st.rerun()
+
+    mode = st.session_state.get("login_mode")
+
+    if mode == "admin":
+        admin_login_form()
+    elif mode == "student":
+        student_login_form()
+
+    # --------------------------
+    # PUBLIC CONTENT ALWAYS VISIBLE
+    # --------------------------
+    st.markdown("<hr>", unsafe_allow_html=True)
+    render_public_content()
+
+
+if __name__ == "__main__":
+    main()
