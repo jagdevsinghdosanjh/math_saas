@@ -1,3 +1,5 @@
+# math_saas/student/subscriptions_page.py
+
 import datetime as dt
 import streamlit as st
 from typing import Any, Dict
@@ -11,10 +13,10 @@ from math_saas.subscriptions.plans import PLANS
 from math_saas.utils.payment import create_order, verify_payment_signature
 
 
-# -----------------------------
-# PAYMENT CALLBACK HANDLER
-# -----------------------------
-def _handle_payment_callback(user_id: str):
+# ---------------------------------------------------------
+# HANDLE PAYMENT CALLBACK
+# ---------------------------------------------------------
+def _handle_payment_callback(user_id: str) -> None:
     params = st.query_params
 
     order_id = params.get("order_id")
@@ -34,10 +36,10 @@ def _handle_payment_callback(user_id: str):
     st.rerun()
 
 
-# -----------------------------
+# ---------------------------------------------------------
 # FREE PLAN ACTIVATION
-# -----------------------------
-def _activate_free_plan(user_id: str, plan_code: str):
+# ---------------------------------------------------------
+def _activate_free_plan(user_id: str, plan_code: str) -> None:
     create_subscription(
         user_id=user_id,
         plan_code=plan_code,
@@ -49,11 +51,10 @@ def _activate_free_plan(user_id: str, plan_code: str):
     st.rerun()
 
 
-# -----------------------------
+# ---------------------------------------------------------
 # PAID PLAN FLOW
-# -----------------------------
-def _start_paid_flow(user_id: str, plan_code: str, plan: Dict[str, Any]):
-    # Ensure price is integer
+# ---------------------------------------------------------
+def _start_paid_flow(user_id: str, plan_code: str, plan: Dict[str, Any]) -> None:
     price = int(plan["price_inr"])
     amount_in_paise = price * 100
 
@@ -65,6 +66,7 @@ def _start_paid_flow(user_id: str, plan_code: str, plan: Dict[str, Any]):
         notes={"user_id": str(user_id), "plan_code": str(plan_code)},
     )
 
+    # Create pending subscription
     create_subscription(
         user_id=user_id,
         plan_code=plan_code,
@@ -77,10 +79,10 @@ def _start_paid_flow(user_id: str, plan_code: str, plan: Dict[str, Any]):
     _render_razorpay_checkout(order, plan)
 
 
-# -----------------------------
+# ---------------------------------------------------------
 # RAZORPAY CHECKOUT UI
-# -----------------------------
-def _render_razorpay_checkout(order: Dict[str, Any], plan: Dict[str, Any]):
+# ---------------------------------------------------------
+def _render_razorpay_checkout(order: Dict[str, Any], plan: Dict[str, Any]) -> None:
     from math_saas.config import RAZORPAY_KEY_ID
 
     html = f"""
@@ -112,10 +114,10 @@ def _render_razorpay_checkout(order: Dict[str, Any], plan: Dict[str, Any]):
     st.markdown(html, unsafe_allow_html=True)
 
 
-# -----------------------------
+# ---------------------------------------------------------
 # MAIN PAGE
-# -----------------------------
-def render_subscriptions_page():
+# ---------------------------------------------------------
+def render_subscriptions_page() -> None:
     st.header("Your Subscription")
 
     student = st.session_state.get("student")
@@ -123,12 +125,15 @@ def render_subscriptions_page():
         st.error("Please login as student.")
         return
 
-    user_id = student["id"]
+    user_id: str = student["id"]
 
+    # Handle Razorpay callback
     _handle_payment_callback(user_id)
 
+    # Fetch latest subscription
     current = get_latest_subscription(user_id)
 
+    # Display current subscription
     if current and current.get("status") == "active":
         st.success(
             f"Active plan: {current.get('plan_code')} "
