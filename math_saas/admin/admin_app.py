@@ -40,7 +40,7 @@ def render_admin_sync():
 def run_admin():
     """Main entry point for the Admin Panel."""
     require_admin()
-
+    st.write("AUTH UID:", st.session_state["admin"]["id"])
     # Safe query param access
     params = st.query_params
     if isinstance(params, dict) and params.get("admin_logout") == "true":
