@@ -1,23 +1,24 @@
 import streamlit as st
 from supabase import create_client
-from math_saas.student.public_content import render_public_content
+
 from math_saas.auth import (
     require_student,
     logout,
     app_container_style,
     top_bar,
 )
-from math_saas.student.subscriptions_page import render_subscriptions_page
-from math_saas.student.billing_history import render_billing_history
+
 from math_saas.student.dashboard import render_dashboard
 from math_saas.student.chapters_page import render_chapters_page
+from math_saas.student.subscriptions_page import render_subscriptions_page
+from math_saas.student.billing_history import render_billing_history
+from math_saas.student.public_content import render_public_content
 
 
-# -----------------------------
+# ---------------------------------------------------------
 # SAFE SUPABASE CONNECTION
-# -----------------------------
+# ---------------------------------------------------------
 def get_supabase():
-    """Connect to Supabase using anon key for student access."""
     try:
         url = st.secrets["supabase"]["url"]
         key = st.secrets["supabase"]["anon_key"]
@@ -27,56 +28,62 @@ def get_supabase():
         return None
 
 
-# -----------------------------
-# SYNCHRONIZED CHAPTERS RENDERER
-# -----------------------------
-def render_synced_chapters():
-    """Display synced chapters from Supabase sync_chapters table safely."""
+# ---------------------------------------------------------
+# RENDER CHAPTERS WITH QUIZ LINKS (REAL CHAPTERS TABLE)
+# ---------------------------------------------------------
+def render_quiz_chapters():
     sb = get_supabase()
     if sb is None:
         st.warning("Unable to connect to Supabase.")
         return
 
     try:
-        res = sb.table("sync_chapters").select("*").eq("is_published", True).order("created_at", desc=True).execute()
+        res = (
+            sb.table("chapters")
+            .select("id, grade, board, chapter_key, chapter_name")
+            .order("grade", desc=False)
+            .execute()
+        )
         chapters = res.data or []
     except Exception as e:
         st.error(f"Error fetching chapters: {e}")
         return
 
     if not chapters:
-        st.info("No synced chapters available yet.")
+        st.info("No chapters available yet.")
         return
 
-    st.subheader("📘 Synced Chapters (CBSE 9th Math)")
+    st.subheader("📘 Chapters & Practice Quizzes")
+
     for ch in chapters:
         if not isinstance(ch, dict):
             continue
 
-        title = str(ch.get("chapter_title", "Untitled"))
-        desc = str(ch.get("description", "Chapter details coming soon."))
-        url = ch.get("chapter_url")
+        title = ch.get("chapter_name", "Untitled")
+        chapter_key = ch.get("chapter_key", "")
 
-        with st.expander(title):
-            st.write(desc)
-            if isinstance(url, str) and url.strip():
-                st.markdown(f"[View Chapter]({url})", unsafe_allow_html=True)
+        quiz_url = (
+            f"https://jsdasr-math-cbse.vercel.app/9th-Math/index.html?"
+            f"chapter={chapter_key}"
+        )
 
-            quiz_url = f"https://jsdasr-math-cbse.vercel.app/9th-Math/index.html?chapter={title.replace(' ', '%20')}"
-            # quiz_url = f"https://quiz-byjsdasr1973.streamlit.app/?chapter={title.replace(' ', '%20')}"
-            st.markdown(f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>', unsafe_allow_html=True)
+        with st.expander(str(title or "Untitled")):
+            st.write(f"Practice quizzes for **{title}**")
+            st.markdown(
+                f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>',
+                unsafe_allow_html=True,
+            )
 
 
-# -----------------------------
+# ---------------------------------------------------------
 # STUDENT PORTAL MAIN FUNCTION
-# -----------------------------
+# ---------------------------------------------------------
 def run_student():
-    """Main entry point for the Student Portal."""
     app_container_style()
 
-    # Safe query param access
+    # Logout via query params
     params = st.query_params
-    if isinstance(params, dict) and params.get("student_logout") == "true":
+    if params.get("student_logout") == "true":
         logout()
 
     require_student()
@@ -99,13 +106,13 @@ def run_student():
     TAB_LABELS = [
         "Dashboard",
         "Chapters",
-        "Synced Chapters & Quiz",
+        "Quizzes",
         "Subscription",
         "Billing",
         "Math & News",
     ]
 
-    tab_dashboard, tab_chapters, tab_synced, tab_subs, tab_billing, tab_public = st.tabs(TAB_LABELS)
+    tab_dashboard, tab_chapters, tab_quiz, tab_subs, tab_billing, tab_public = st.tabs(TAB_LABELS)
 
     ROUTES = {
         "Dashboard": render_dashboard,
@@ -126,17 +133,15 @@ def run_student():
     with tab_chapters:
         try:
             ROUTES["Chapters"]()
-            st.markdown("---")
-            render_synced_chapters()
         except Exception as e:
             st.info(f"Chapters page coming soon. ({e})")
 
-    # Synced Chapters & Quiz
-    with tab_synced:
+    # Quizzes (new unified system)
+    with tab_quiz:
         try:
-            render_synced_chapters()
+            render_quiz_chapters()
         except Exception as e:
-            st.info(f"Synced chapters not available. ({e})")
+            st.info(f"Quizzes not available. ({e})")
 
     # Subscription
     with tab_subs:
