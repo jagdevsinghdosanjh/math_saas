@@ -19,6 +19,7 @@ from math_saas.utils.db import get_supabase
 def handle_login(email: str, password: str, role: str):
     sb = get_supabase()
 
+    # Authenticate
     try:
         res = sb.auth.sign_in_with_password({"email": email, "password": password})
     except Exception:
@@ -44,10 +45,11 @@ def handle_login(email: str, password: str, role: str):
         st.error("Profile not found or RLS blocked access.")
         return None
 
-    profile = profile_raw if isinstance(profile_raw, dict) else None
-    if not profile:
+    if not isinstance(profile_raw, dict):
         st.error("Profile not found.")
         return None
+
+    profile = profile_raw
 
     # Role validation
     if role == "admin" and not profile.get("is_admin", False):
@@ -66,8 +68,8 @@ def handle_login(email: str, password: str, role: str):
 # -------------------------------------------------
 def admin_login_form():
     st.markdown("<h3>Admin Login</h3>", unsafe_allow_html=True)
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
+    email = st.text_input("Email", key="admin_email")
+    password = st.text_input("Password", type="password", key="admin_password")
 
     if st.button("Login as Admin"):
         profile = handle_login(email, password, role="admin")
@@ -82,8 +84,8 @@ def admin_login_form():
 # -------------------------------------------------
 def student_login_form():
     st.markdown("<h3>Student Login</h3>", unsafe_allow_html=True)
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
+    email = st.text_input("Email", key="student_email")
+    password = st.text_input("Password", type="password", key="student_password")
 
     if st.button("Login as Student"):
         profile = handle_login(email, password, role="student")
@@ -103,7 +105,8 @@ def main():
     theme_choice = st.radio(
         "Choose Theme:",
         ["Dark (Neon)", "Light"],
-        horizontal=True
+        horizontal=True,
+        key="theme_choice_radio"
     )
 
     st.session_state["theme_choice"] = theme_choice
@@ -150,17 +153,17 @@ def main():
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        if st.button("Admin Login"):
+        if st.button("Admin Login", key="btn_admin_login"):
             st.session_state["login_mode"] = "admin"
             st.rerun()
 
     with col2:
-        if st.button("Student Login"):
+        if st.button("Student Login", key="btn_student_login"):
             st.session_state["login_mode"] = "student"
             st.rerun()
 
     with col3:
-        if st.button("New Student? Sign Up"):
+        if st.button("New Student? Sign Up", key="btn_signup"):
             st.session_state["login_mode"] = "signup"
             st.rerun()
 
