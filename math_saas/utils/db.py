@@ -1,43 +1,68 @@
+import os
 from supabase import create_client
-from math_saas.config import SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
 _supabase = None
 
 def get_supabase():
     """Return a singleton Supabase client (service-role for admin panel)."""
 
-    if SUPABASE_URL is None:
-        raise RuntimeError("SUPABASE_URL is not set in environment variables")
-
-    if SUPABASE_SERVICE_ROLE_KEY is None:
-        raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY is not set in environment variables")
-
     global _supabase
-    if _supabase is None:
-        _supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    if _supabase is not None:
+        return _supabase
 
+    # Load secrets at runtime (cloud-safe)
+    url = os.getenv("SUPABASE_URL")
+    service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+    if not url:
+        raise RuntimeError("SUPABASE_URL missing")
+
+    if not service_key:
+        raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY missing")
+
+    _supabase = create_client(url, service_key)
     return _supabase
 
 # from supabase import create_client
-# from math_saas.config import SUPABASE_URL, SUPABASE_ANON_KEY
+# from math_saas.config import SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
-# # Singleton client
 # _supabase = None
 
-
 # def get_supabase():
-#     """Return a singleton Supabase client."""
+#     """Return a singleton Supabase client (service-role for admin panel)."""
 
-#     # Pylance-safe checks
 #     if SUPABASE_URL is None:
 #         raise RuntimeError("SUPABASE_URL is not set in environment variables")
 
-#     if SUPABASE_ANON_KEY is None:
-#         raise RuntimeError("SUPABASE_ANON_KEY is not set in environment variables")
+#     if SUPABASE_SERVICE_ROLE_KEY is None:
+#         raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY is not set in environment variables")
 
 #     global _supabase
 #     if _supabase is None:
-#         _supabase =create_client(SUPABASE_URL, SERVICE_ROLE_KEY)
-#         # create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+#         _supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 #     return _supabase
+
+# # from supabase import create_client
+# # from math_saas.config import SUPABASE_URL, SUPABASE_ANON_KEY
+
+# # # Singleton client
+# # _supabase = None
+
+
+# # def get_supabase():
+# #     """Return a singleton Supabase client."""
+
+# #     # Pylance-safe checks
+# #     if SUPABASE_URL is None:
+# #         raise RuntimeError("SUPABASE_URL is not set in environment variables")
+
+# #     if SUPABASE_ANON_KEY is None:
+# #         raise RuntimeError("SUPABASE_ANON_KEY is not set in environment variables")
+
+# #     global _supabase
+# #     if _supabase is None:
+# #         _supabase =create_client(SUPABASE_URL, SERVICE_ROLE_KEY)
+# #         # create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+# #     return _supabase
