@@ -125,7 +125,7 @@ def main():
     # Login gateway
     st.markdown(
         """
-        <h2 style="margin-top:0;">Welcome to Math Hub</h2>
+        <h2 style="margin-top:0;">Welcome to Student's Math Companion</h2>
         <p style="color:#9ca3af;">Choose your login type to continue.</p>
         """,
         unsafe_allow_html=True,
