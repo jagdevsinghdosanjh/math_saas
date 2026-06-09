@@ -33,7 +33,6 @@ def handle_login(email: str, password: str, role: str):
         st.error("Invalid login credentials")
         return None, None
 
-    # Fetch profile
     try:
         profile_raw = (
             sb.table("profiles")
@@ -53,7 +52,6 @@ def handle_login(email: str, password: str, role: str):
 
     profile = profile_raw
 
-    # Role validation
     if role == "admin" and not profile.get("is_admin", False):
         st.error("You are not an admin.")
         return None, None
@@ -62,7 +60,9 @@ def handle_login(email: str, password: str, role: str):
         st.error("Students must login from Student Login.")
         return None, None
 
-    return profile, session.session.access_token
+    # FINAL FIX — correct JWT extraction
+    return profile, session.access_token
+
 
 
 # -------------------------------------------------
