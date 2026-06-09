@@ -7,27 +7,41 @@ from math_saas.subscriptions.core import get_active_subscription
 
 
 # ---------------------------------------------------------
-# FETCH CHAPTERS (TYPE-SAFE)
+# SAFE FLOAT CONVERSION (Pylance-clean)
 # ---------------------------------------------------------
-def _fetch_chapters() -> List[Dict[str, Any]]:
+def safe_float(value: Any) -> float:
+    try:
+        return float(value)
+    except Exception:
+        return 0.0
+
+
+# ---------------------------------------------------------
+# FETCH CHAPTERS
+# ---------------------------------------------------------
+def _fetch_chapters(grade: str, board: str) -> List[Dict[str, Any]]:
     sb = get_supabase()
 
     try:
         res = (
             sb.table("chapters")
-            .select("id, title, description, order_index, is_premium")
-            .order("order_index", desc=False)  # ASCENDING ORDER
+            .select("id, grade, board, chapter_key, chapter_name, created_at")
+            .eq("grade", grade)
+            .eq("board", board)
+            .order("id", desc=False)
             .execute()
         )
+
         raw = res.data or []
         return [row for row in raw if isinstance(row, dict)]
+
     except Exception as exc:
         st.error(f"Error loading chapters: {exc}")
         return []
 
 
 # ---------------------------------------------------------
-# FETCH PROGRESS (TYPE-SAFE)
+# FETCH PROGRESS
 # ---------------------------------------------------------
 def _fetch_progress(user_id: str) -> Dict[str, float]:
     sb = get_supabase()
@@ -39,22 +53,16 @@ def _fetch_progress(user_id: str) -> Dict[str, float]:
             .eq("user_id", user_id)
             .execute()
         )
+
         raw = res.data or []
         progress_map: Dict[str, float] = {}
 
         for row in raw:
-            if isinstance(row, dict):
-                cid = str(row.get("chapter_id", ""))
-                prog_raw = row.get("progress", 0)
+            if not isinstance(row, dict):
+                continue
 
-                # Safe float conversion
-                if isinstance(prog_raw, (int, float)):
-                    progress_map[cid] = float(prog_raw)
-                else:
-                    try:
-                        progress_map[cid] = float(str(prog_raw))
-                    except Exception:
-                        progress_map[cid] = 0.0
+            cid = str(row.get("chapter_id", ""))
+            progress_map[cid] = safe_float(row.get("progress", 0))
 
         return progress_map
 
@@ -68,58 +76,46 @@ def _fetch_progress(user_id: str) -> Dict[str, float]:
 def render_chapters_page() -> None:
     st.markdown("<h3>Chapters</h3>", unsafe_allow_html=True)
 
-    # Validate student session
     student = st.session_state.get("student")
     if not isinstance(student, dict):
         st.error("Please login as student.")
         return
 
-    raw_id = student.get("id")
-    user_id = str(raw_id) if raw_id is not None else ""
+    user_id = str(student.get("id") or "")
+    grade = str(student.get("grade") or "")
+    board = str(student.get("board") or "")
 
-    if not user_id:
+    if not user_id or not grade or not board:
         st.error("Invalid student session.")
         return
 
-    # Subscription check
     active_sub = get_active_subscription(user_id)
     has_premium = active_sub is not None
 
-    # Fetch chapters + progress
-    chapters = _fetch_chapters()
+    chapters = _fetch_chapters(grade, board)
     progress_map = _fetch_progress(user_id)
 
     if not chapters:
-        st.info("No chapters available yet.")
+        st.info("No chapters available for your grade/board.")
         return
 
-    # Render each chapter card
     for ch in chapters:
         cid = str(ch.get("id", ""))
-        title = str(ch.get("title", "Untitled"))
-        desc = str(ch.get("description", ""))
-        premium = bool(ch.get("is_premium", False))
+        chapter_name = str(ch.get("chapter_name", "Untitled"))
+        chapter_key = str(ch.get("chapter_key", ""))
 
-        # Safe progress extraction
-        prog_raw = progress_map.get(cid, 0)
-
-        if isinstance(prog_raw, (int, float)):
-            progress = float(prog_raw)
-        else:
-            try:
-                progress = float(str(prog_raw))
-            except Exception:
-                progress = 0.0
-
+        premium = chapter_key.lower().startswith("p_")
         locked = premium and not has_premium
 
-        # Card UI
+        # Pylance-clean float
+        progress = safe_float(progress_map.get(cid, 0))
+
         st.markdown(
             f"""
             <div class="neon-card" style="margin-bottom:16px;">
-                <h4 style="margin:0;">{title}</h4>
+                <h4 style="margin:0;">{chapter_name}</h4>
                 <p style="color:{TEXT_MUTED}; margin:4px 0 8px 0;">
-                    {desc}
+                    Key: {chapter_key}
                 </p>
                 <p style="color:{TEXT_MUTED}; margin:0;">
                     {'Premium Chapter 🔒' if locked else 'Accessible ✔️'}
@@ -129,10 +125,8 @@ def render_chapters_page() -> None:
             unsafe_allow_html=True,
         )
 
-        # Progress bar (always receives a valid float)
         st.progress(progress)
 
-        # Action button
         if locked:
             st.button("Unlock with Subscription", key=f"unlock_{cid}", disabled=True)
         else:
