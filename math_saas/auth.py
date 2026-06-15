@@ -143,22 +143,6 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
             st.query_params[logout_param] = "true"
             st.rerun()
 
-# def top_bar(title: str, role: str, logout_param: str) -> None:
-#     st.markdown(
-#         f"""
-#         <div style="padding:12px; background:#0a0c10; border-bottom:1px solid #00ff88;">
-#             <span style="color:#00ff88; font-weight:600;">{role}</span>
-#             <h3 style="margin:4px 0 0 0;">{title}</h3>
-#             <a href="/?{logout_param}=true"
-#                style="float:right; background:#ff4d6d; padding:8px 16px; border-radius:8px; color:white;">
-#                Logout
-#             </a>
-#         </div>
-#         """,
-#         unsafe_allow_html=True,
-#     )
-
-
 # ------------------------------------------------------------
 # AUTH PERSISTENCE
 # ------------------------------------------------------------
@@ -203,22 +187,21 @@ def restore_session() -> None:
 # LOGOUT (FINAL FIXED VERSION)
 # ------------------------------------------------------------
 def logout() -> None:
-    keys_to_clear = [
-        "student",
-        "admin",
-        "role",
-        "jwt",
-        "authenticated",
-        "login_mode",
-    ]
+    """
+    Clears ONLY authentication-related session keys,
+    clears URL params, and forces a clean rerun.
+    """
 
-    for key in keys_to_clear:
+    # 1. Remove only auth keys (never clear all keys)
+    for key in ["student", "admin", "role", "jwt", "authenticated", "login_mode"]:
         if key in st.session_state:
             del st.session_state[key]
 
+    # 2. Clear ALL query params (critical)
     st.query_params.clear()
-    st.rerun()
 
+    # 3. Force a clean rerun
+    st.rerun()
 
 # ------------------------------------------------------------
 # ROLE HELPERS
