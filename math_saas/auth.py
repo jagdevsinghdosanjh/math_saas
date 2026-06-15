@@ -58,7 +58,7 @@ def app_container_style() -> None:
            PARAGRAPHS
         ------------------------------ */
         p {
-            color: blue;
+            color: white;
             line-height: 1.6;
         }
 
