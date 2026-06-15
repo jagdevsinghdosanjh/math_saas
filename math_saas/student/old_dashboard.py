@@ -8,61 +8,43 @@ from math_saas.auth import TEXT_MUTED, ACCENT
 
 
 # -----------------------------
-# Supabase Client
+# Supabase Client (Type Safe)
 # -----------------------------
-assert SUPABASE_URL, "SUPABASE_URL missing"
-assert SUPABASE_KEY, "SUPABASE_KEY missing"
+assert SUPABASE_URL is not None, "SUPABASE_URL missing"
+assert SUPABASE_KEY is not None, "SUPABASE_KEY missing"
 
 sb = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 # -----------------------------
-# Subscription Fetcher (SAFE)
+# Subscription Fetcher
 # -----------------------------
 def get_user_active_subscription(user_id: str) -> Optional[Dict[str, Any]]:
-    """Return active subscription row safely."""
+    """Return active subscription row as a dictionary."""
     res = (
         sb.table("subscriptions")
         .select("*")
         .eq("user_id", user_id)
         .eq("status", "active")
-        .maybe_single()
+        .single()
         .execute()
     )
-
-    data = getattr(res, "data", None)
+    data = res.data
     return data if isinstance(data, dict) else None
-
-# def get_user_active_subscription(user_id: str) -> Optional[Dict[str, Any]]:
-#     """
-#     Returns the active subscription for a user.
-#     Uses maybe_single() to avoid PGRST116 errors.
-#     """
-#     res = (
-#         sb.table("subscriptions")
-#         .select("*")
-#         .eq("user_id", user_id)
-#         .eq("status", "active")
-#         .maybe_single()
-#         .execute()
-#     )
-
-#     data = res.data
-#     return data if isinstance(data, dict) else None
 
 
 # -----------------------------
 # UI Components
 # -----------------------------
 def render_subscription_card(sub: Optional[Dict[str, Any]]):
-    """Render subscription card with safe fallbacks."""
+    """Render the subscription card safely."""
     if sub is None:
         st.markdown(
             f"""
             <div class="neon-card">
                 <h4 style="margin:0;">No Active Plan</h4>
                 <p style="color:{TEXT_MUTED}; margin:4px 0 0 0;">
-                    Upgrade to unlock all chapters, notes, and quizzes.
+                    Upgrade to unlock all chapters and notes.
                 </p>
             </div>
             """,
@@ -70,8 +52,9 @@ def render_subscription_card(sub: Optional[Dict[str, Any]]):
         )
         return
 
-    plan_code = str(sub.get("plan_code", "FREE"))
-    expires = str(sub.get("expires_at", "N/A"))
+    # Safe extraction
+    plan_code = str(sub.get("plan_code", ""))
+    expires = str(sub.get("expires_at", ""))
 
     st.markdown(
         f"""
@@ -98,7 +81,6 @@ def render_quick_links():
                 <li>View Chapters</li>
                 <li>Manage Subscription</li>
                 <li>Billing History</li>
-                <li>Math & News</li>
             </ul>
         </div>
         """,
@@ -107,8 +89,7 @@ def render_quick_links():
 
 
 def render_welcome_card(student: Dict[str, Any]):
-    name = str(student.get("full_name") or student.get("name") or "Student")
-
+    name = str(student.get("name", "Student"))
     st.markdown(
         f"""
         <div class="neon-card" style="margin-top:16px;">
