@@ -3,7 +3,7 @@ import re
 from typing import Any, Dict, List, cast
 from math_saas.utils.db import get_supabase
 
-TEXT_MUTED = "#1f49e2"
+TEXT_MUTED = "#00FFFF"
 TEXT_MAIN = "#f54910"
 ACCENT = "#00FFFF"
 
