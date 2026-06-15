@@ -108,8 +108,10 @@ def main():
 
     if params.get("admin_logout") == "true":
         logout()
+        return
     if params.get("student_logout") == "true":
         logout()
+        return
 
     if "admin" in st.session_state:
         run_admin()
