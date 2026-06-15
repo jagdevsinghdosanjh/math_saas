@@ -126,7 +126,7 @@ def app_container_style() -> None:
             font-family: 'Inter', sans-serif;
         }
         .neon-card {
-            background: #121417;
+            background: #00FFFF;
             border-radius: 14px;
             padding: 20px;
             border: 1px solid rgba(255,255,255,0.08);
