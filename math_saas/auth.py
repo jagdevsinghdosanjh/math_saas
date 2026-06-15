@@ -49,7 +49,7 @@ def app_container_style() -> None:
            HEADINGS
         ------------------------------ */
         h1, h2, h3, h4 {
-            color: pink;
+            color: red;
             letter-spacing: 0.5px;
             font-weight: 600;
         }
@@ -58,7 +58,7 @@ def app_container_style() -> None:
            PARAGRAPHS
         ------------------------------ */
         p {
-            color: white;
+            color: blue;
             line-height: 1.6;
         }
 
