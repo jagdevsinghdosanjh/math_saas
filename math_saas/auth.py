@@ -108,6 +108,14 @@ def apply_light_theme() -> None:
 # TOP BAR
 # ------------------------------------------------------------
 def top_bar(title: str, role: str, logout_param: str) -> None:
+    """
+    Streamlit-native top bar with personalized name display.
+    """
+
+    # Determine displayed name
+    user = st.session_state.get(role, {})
+    display_name = user.get("full_name") or user.get("name") or role.capitalize()
+
     st.markdown(
         f"""
         <div style="
@@ -115,7 +123,9 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
             border-bottom:1px solid #00ff88;
             padding:12px 16px;
         ">
-            <span style="color:#00ff88; font-weight:600;">{role}</span>
+            <span style="color:#00ff88; font-weight:600; font-size:0.9rem;">
+                {display_name}
+            </span>
             <h3 style="margin:4px 0 0 0; color:white;">{title}</h3>
         </div>
         """,
