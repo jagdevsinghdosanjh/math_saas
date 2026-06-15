@@ -58,7 +58,7 @@ def app_container_style() -> None:
            PARAGRAPHS
         ------------------------------ */
         p {
-            color: blue;
+            color: red;
             line-height: 1.6;
         }
 
@@ -67,7 +67,7 @@ def app_container_style() -> None:
         ------------------------------ */
         .stButton>button {
             background: linear-gradient(135deg, #00ff88, #00cc6a);
-            color: black;
+            color: aqua;
             border-radius: 8px;
             padding: 8px 18px;
             border: none;
