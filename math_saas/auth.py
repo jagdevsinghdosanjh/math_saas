@@ -40,15 +40,7 @@ def clean_math(text: Any) -> str:
     if not isinstance(text, str):
         return ""
     text = text.replace("\\\\(", "\\(").replace("\\\\)", "\\)")
-    text = text.replace("\\\
-
-\[", "\
-
-\[").replace("\\\\]
-
-", "\\]
-
-")
+    text = text.replace("\\\\[", "\\[").replace("\\\\]", "\\]")
     text = text.replace("\\\\frac", "\\frac")
     return re.sub(r"\$\s*\$", "$$", text)
 
@@ -58,6 +50,7 @@ def clean_math(text: Any) -> str:
 # ------------------------------------------------------------
 def render_public_content() -> None:
     sb = get_supabase()
+
     res: Any = (
         sb.table("public_content")
         .select("*")
@@ -137,35 +130,25 @@ def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     st.session_state[role] = user
     st.session_state["jwt"] = jwt
 
-    # Store token + role in URL
     st.query_params = {"token": jwt, "role": role}
 
 
 def restore_session() -> None:
-    """
-    Restores a logged-in session using token + role stored in query params.
-    Prevents auto-login after logout and avoids Streamlit Cloud session issues.
-    """
-
     raw_params = st.query_params
     params: Dict[str, str] = dict(raw_params) if isinstance(raw_params, dict) else {}
 
-    # 1. Prevent auto-login after logout
     if params.get("student_logout") == "true" or params.get("admin_logout") == "true":
         return
 
-    # 2. Extract token + role
     token = params.get("token")
     role = params.get("role")
 
     if not token or not role:
         return
 
-    # 3. If already logged in, skip
     if "student" in st.session_state or "admin" in st.session_state:
         return
 
-    # 4. Validate token with Supabase
     sb = get_supabase()
     try:
         user_resp = sb.auth.get_user(token)
@@ -176,7 +159,6 @@ def restore_session() -> None:
     if not user:
         return
 
-    # 5. Restore session
     st.session_state["jwt"] = token
     st.session_state[role] = user
 
@@ -185,11 +167,6 @@ def restore_session() -> None:
 # LOGOUT (FINAL FIXED VERSION)
 # ------------------------------------------------------------
 def logout() -> None:
-    """
-    Clears only authentication-related session keys,
-    clears query params, and forces a clean rerun.
-    """
-
     keys_to_clear = [
         "student",
         "admin",
@@ -203,10 +180,7 @@ def logout() -> None:
         if key in st.session_state:
             del st.session_state[key]
 
-    # Clear URL params
     st.query_params.clear()
-
-    # Force clean rerun
     st.rerun()
 
 
