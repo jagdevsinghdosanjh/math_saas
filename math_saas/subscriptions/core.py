@@ -1,154 +1,240 @@
-from __future__ import annotations
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, List
+from supabase import create_client
+from math_saas.config import SUPABASE_URL, SUPABASE_KEY
 
-from math_saas.utils.db import get_supabase
-
-
-# -----------------------------------------
-# PLAN DURATIONS
-# -----------------------------------------
-PLAN_DURATIONS: Dict[str, int] = {
-    "FREE": 3650,
-    "MONTHLY": 30,
-    "ANNUAL": 365,
-}
+sb = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-# -----------------------------------------
-# EXPIRY CALCULATOR
-# -----------------------------------------
-def _compute_expiry(plan_code: str) -> Dict[str, datetime]:
-    now = datetime.utcnow()
-    days = PLAN_DURATIONS.get(plan_code.upper(), 30)
-    return {
-        "started_at": now,
-        "expires_at": now + timedelta(days=days),
-    }
-
-
-# -----------------------------------------
-# CREATE SUBSCRIPTION
-# -----------------------------------------
-def create_subscription(
-    user_id: str,
-    plan_code: str,
-    status: str,
-    amount: Optional[int] = None,
-    currency: Optional[str] = None,
-    razorpay_order_id: Optional[str] = None,
-) -> Dict[str, Any]:
-    sb = get_supabase()
-    times = _compute_expiry(plan_code)
-
-    payload: Dict[str, Any] = {
+def create_pending_subscription(user_id: str, plan_code: str, amount: int, order_id: str):
+    return sb.table("subscriptions").insert({
         "user_id": user_id,
-        "plan": plan_code.upper(),
-        "plan_code": plan_code.upper(),
-        "status": status,
+        "plan_code": plan_code,
+        "status": "pending",
         "amount": amount,
-        "currency": currency,
-        "razorpay_order_id": razorpay_order_id,
-        "started_at": times["started_at"].isoformat(),
-        "expires_at": times["expires_at"].isoformat(),
-    }
-
-    res = sb.table("subscriptions").insert(payload).execute()
-
-    data: Optional[List[Dict[str, Any]]] = res.data  # type: ignore
-    if data and isinstance(data, list) and len(data) > 0:
-        return data[0]
-
-    return {}
+        "currency": "INR",
+        "razorpay_order_id": order_id,
+    }).execute()
 
 
-# -----------------------------------------
-# ACTIVATE SUBSCRIPTION (AFTER PAYMENT)
-# -----------------------------------------
-def activate_subscription(order_id: str, payment_id: str, signature: str) -> None:
-    sb = get_supabase()
+def activate_subscription(subscription_id: str, plan_days: int):
+    now = datetime.utcnow()
+    expires = now + timedelta(days=plan_days)
 
-    # Fetch subscription by order_id
-    res = (
-        sb.table("subscriptions")
-        .select("*")
-        .eq("razorpay_order_id", order_id)
-        .single()
-        .execute()
-    )
-
-    sub: Optional[Dict[str, Any]] = res.data  # type: ignore
-    if not sub or not isinstance(sub, dict):
-        return
-
-    plan_code = str(sub.get("plan_code", "FREE"))
-    times = _compute_expiry(plan_code)
-
-    # Update subscription
-    sb.table("subscriptions").update(
-        {
-            "status": "active",
-            "started_at": times["started_at"].isoformat(),
-            "expires_at": times["expires_at"].isoformat(),
-        }
-    ).eq("id", sub["id"]).execute()
-
-    # Log payment
-    sb.table("subscription_payments").insert(
-        {
-            "user_id": sub.get("user_id"),
-            "order_id": order_id,
-            "payment_id": payment_id,
-            "signature": signature,
-            "amount": sub.get("amount"),
-            "status": "success",
-        }
-    ).execute()
+    return sb.table("subscriptions").update({
+        "status": "active",
+        "started_at": now.isoformat(),
+        "expires_at": expires.isoformat(),
+    }).eq("id", subscription_id).execute()
 
 
-# -----------------------------------------
-# GET LATEST SUBSCRIPTION
-# -----------------------------------------
-def get_latest_subscription(user_id: str) -> Optional[Dict[str, Any]]:
-    sb = get_supabase()
+def log_payment(subscription_id: str, order_id: str, payment_id: str, signature: str, amount: int):
+    return sb.table("subscription_payments").insert({
+        "subscription_id": subscription_id,
+        "order_id": order_id,
+        "payment_id": payment_id,
+        "signature": signature,
+        "amount": amount,
+        "status": "captured",
+    }).execute()
 
-    res = (
-        sb.table("subscriptions")
-        .select("*")
-        .eq("user_id", user_id)
-        .order("started_at", desc=True)
-        .limit(1)
-        .execute()
-    )
 
-    data: Optional[List[Dict[str, Any]]] = res.data  # type: ignore
+def get_subscription_by_order(order_id: str):
+    return sb.table("subscriptions").select("*").eq("razorpay_order_id", order_id).single().execute()
 
-    if data and isinstance(data, list) and len(data) > 0:
-        return data[0]
+# from datetime import datetime, timedelta
+# from supabase import create_client
+# from math_saas.config import SUPABASE_URL, SUPABASE_KEY
 
-    return None
+# sb = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def get_active_subscription(user_id: str) -> Optional[Dict[str, Any]]:
-    sb = get_supabase()
 
-    res = (
-        sb.table("subscriptions")
-        .select("*")
-        .eq("user_id", user_id)
-        .eq("status", "active")
-        .order("expires_at", desc=True)
-        .limit(1)
-        .execute()
-    )
+# def create_pending_subscription(user_id: str, plan_code: str, amount: int, order_id: str):
+#     return sb.table("subscriptions").insert({
+#         "user_id": user_id,
+#         "plan_code": plan_code,
+#         "status": "pending",
+#         "amount": amount,
+#         "currency": "INR",
+#         "razorpay_order_id": order_id,
+#     }).execute()
 
-    data = res.data or []
-    if not data:
-        return None
 
-    item = data[0]
+# def activate_subscription(subscription_id: str, plan_days: int):
+#     now = datetime.utcnow()
+#     expires = now + timedelta(days=plan_days)
 
-    # Ensure return type is Dict[str, Any]
-    if isinstance(item, dict):
-        return item
+#     return sb.table("subscriptions").update({
+#         "status": "active",
+#         "started_at": now.isoformat(),
+#         "expires_at": expires.isoformat(),
+#     }).eq("id", subscription_id).execute()
 
-    return None
+
+# def log_payment(subscription_id: str, order_id: str, payment_id: str, signature: str, amount: int):
+#     return sb.table("subscription_payments").insert({
+#         "subscription_id": subscription_id,
+#         "order_id": order_id,
+#         "payment_id": payment_id,
+#         "signature": signature,
+#         "amount": amount,
+#         "status": "captured",
+#     }).execute()
+
+
+# def get_subscription_by_order(order_id: str):
+#     return sb.table("subscriptions").select("*").eq("razorpay_order_id", order_id).single().execute()
+
+# # from __future__ import annotations
+# # from datetime import datetime, timedelta
+# # from typing import Any, Dict, Optional, List
+
+# # from math_saas.utils.db import get_supabase
+
+
+# # # -----------------------------------------
+# # # PLAN DURATIONS
+# # # -----------------------------------------
+# # PLAN_DURATIONS: Dict[str, int] = {
+# #     "FREE": 3650,
+# #     "MONTHLY": 30,
+# #     "ANNUAL": 365,
+# # }
+
+
+# # # -----------------------------------------
+# # # EXPIRY CALCULATOR
+# # # -----------------------------------------
+# # def _compute_expiry(plan_code: str) -> Dict[str, datetime]:
+# #     now = datetime.utcnow()
+# #     days = PLAN_DURATIONS.get(plan_code.upper(), 30)
+# #     return {
+# #         "started_at": now,
+# #         "expires_at": now + timedelta(days=days),
+# #     }
+
+
+# # # -----------------------------------------
+# # # CREATE SUBSCRIPTION
+# # # -----------------------------------------
+# # def create_subscription(
+# #     user_id: str,
+# #     plan_code: str,
+# #     status: str,
+# #     amount: Optional[int] = None,
+# #     currency: Optional[str] = None,
+# #     razorpay_order_id: Optional[str] = None,
+# # ) -> Dict[str, Any]:
+# #     sb = get_supabase()
+# #     times = _compute_expiry(plan_code)
+
+# #     payload: Dict[str, Any] = {
+# #         "user_id": user_id,
+# #         "plan": plan_code.upper(),
+# #         "plan_code": plan_code.upper(),
+# #         "status": status,
+# #         "amount": amount,
+# #         "currency": currency,
+# #         "razorpay_order_id": razorpay_order_id,
+# #         "started_at": times["started_at"].isoformat(),
+# #         "expires_at": times["expires_at"].isoformat(),
+# #     }
+
+# #     res = sb.table("subscriptions").insert(payload).execute()
+
+# #     data: Optional[List[Dict[str, Any]]] = res.data  # type: ignore
+# #     if data and isinstance(data, list) and len(data) > 0:
+# #         return data[0]
+
+# #     return {}
+
+
+# # # -----------------------------------------
+# # # ACTIVATE SUBSCRIPTION (AFTER PAYMENT)
+# # # -----------------------------------------
+# # def activate_subscription(order_id: str, payment_id: str, signature: str) -> None:
+# #     sb = get_supabase()
+
+# #     # Fetch subscription by order_id
+# #     res = (
+# #         sb.table("subscriptions")
+# #         .select("*")
+# #         .eq("razorpay_order_id", order_id)
+# #         .single()
+# #         .execute()
+# #     )
+
+# #     sub: Optional[Dict[str, Any]] = res.data  # type: ignore
+# #     if not sub or not isinstance(sub, dict):
+# #         return
+
+# #     plan_code = str(sub.get("plan_code", "FREE"))
+# #     times = _compute_expiry(plan_code)
+
+# #     # Update subscription
+# #     sb.table("subscriptions").update(
+# #         {
+# #             "status": "active",
+# #             "started_at": times["started_at"].isoformat(),
+# #             "expires_at": times["expires_at"].isoformat(),
+# #         }
+# #     ).eq("id", sub["id"]).execute()
+
+# #     # Log payment
+# #     sb.table("subscription_payments").insert(
+# #         {
+# #             "user_id": sub.get("user_id"),
+# #             "order_id": order_id,
+# #             "payment_id": payment_id,
+# #             "signature": signature,
+# #             "amount": sub.get("amount"),
+# #             "status": "success",
+# #         }
+# #     ).execute()
+
+
+# # # -----------------------------------------
+# # # GET LATEST SUBSCRIPTION
+# # # -----------------------------------------
+# # def get_latest_subscription(user_id: str) -> Optional[Dict[str, Any]]:
+# #     sb = get_supabase()
+
+# #     res = (
+# #         sb.table("subscriptions")
+# #         .select("*")
+# #         .eq("user_id", user_id)
+# #         .order("started_at", desc=True)
+# #         .limit(1)
+# #         .execute()
+# #     )
+
+# #     data: Optional[List[Dict[str, Any]]] = res.data  # type: ignore
+
+# #     if data and isinstance(data, list) and len(data) > 0:
+# #         return data[0]
+
+# #     return None
+
+# # def get_active_subscription(user_id: str) -> Optional[Dict[str, Any]]:
+# #     sb = get_supabase()
+
+# #     res = (
+# #         sb.table("subscriptions")
+# #         .select("*")
+# #         .eq("user_id", user_id)
+# #         .eq("status", "active")
+# #         .order("expires_at", desc=True)
+# #         .limit(1)
+# #         .execute()
+# #     )
+
+# #     data = res.data or []
+# #     if not data:
+# #         return None
+
+# #     item = data[0]
+
+# #     # Ensure return type is Dict[str, Any]
+# #     if isinstance(item, dict):
+# #         return item
+
+# #     return None
