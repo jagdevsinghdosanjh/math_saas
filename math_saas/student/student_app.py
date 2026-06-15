@@ -72,7 +72,7 @@ def run_student() -> None:
     params = st.query_params
     if params.get("student_logout") == "true":
         logout()
-
+        return
     require_student()
 
     top_bar("Math Hub Student Portal", "Student", "student_logout")
