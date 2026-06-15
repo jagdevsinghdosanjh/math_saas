@@ -108,41 +108,26 @@ def apply_light_theme() -> None:
 # TOP BAR
 # ------------------------------------------------------------
 def top_bar(title: str, role: str, logout_param: str) -> None:
-    """
-    Clean, Streamlit-native top bar with a real logout button.
-    Works reliably on Streamlit Cloud and avoids HTML float issues.
-    """
-
-    bar_bg = "#0a0c10"
-    border = "#00ff88"
-
     st.markdown(
         f"""
         <div style="
-            background:{bar_bg};
-            border-bottom:1px solid {border};
+            background:#0a0c10;
+            border-bottom:1px solid #00ff88;
             padding:12px 16px;
-            border-radius:0px;
         ">
-            <span style="color:{border}; font-weight:600; font-size:0.9rem;">
-                {role}
-            </span>
+            <span style="color:#00ff88; font-weight:600;">{role}</span>
             <h3 style="margin:4px 0 0 0; color:white;">{title}</h3>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Streamlit-native layout for logout button
     col1, col2 = st.columns([6, 1])
 
     with col2:
-        logout_clicked = st.button("Logout", key=f"logout_{role}", use_container_width=True)
-        if logout_clicked:
-            # Trigger logout via query param
+        if st.button("Logout", key=f"logout_{role}", use_container_width=True):
             st.query_params[logout_param] = "true"
             st.rerun()
-
 # ------------------------------------------------------------
 # AUTH PERSISTENCE
 # ------------------------------------------------------------
@@ -154,9 +139,9 @@ def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
 
 
 def restore_session() -> None:
-    raw_params = st.query_params
-    params: Dict[str, str] = dict(raw_params) if isinstance(raw_params, dict) else {}
+    params = dict(st.query_params)
 
+    # Prevent auto-login after logout
     if params.get("student_logout") == "true" or params.get("admin_logout") == "true":
         return
 
@@ -166,6 +151,7 @@ def restore_session() -> None:
     if not token or not role:
         return
 
+    # Already logged in
     if "student" in st.session_state or "admin" in st.session_state:
         return
 
@@ -181,7 +167,6 @@ def restore_session() -> None:
 
     st.session_state["jwt"] = token
     st.session_state[role] = user
-
 
 # ------------------------------------------------------------
 # LOGOUT (FINAL FIXED VERSION)
