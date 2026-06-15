@@ -136,6 +136,17 @@ def app_container_style() -> None:
 #         unsafe_allow_html=True,
 #     )
 
+def sanitize_html(text: str) -> str:
+    if not isinstance(text, str):
+        return ""
+
+    # Remove all <div> and </div> tags
+    text = re.sub(r"</?div[^>]*>", "", text, flags=re.IGNORECASE)
+
+    # Remove empty HTML artifacts
+    text = text.replace("&nbsp;", " ").strip()
+
+    return text
 
 # ------------------------------------------------------------
 # CLEAN MATH
