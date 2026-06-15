@@ -56,7 +56,7 @@ def render():
         df = df[df.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
 
     st.subheader("Usage Logs")
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.dataframe(df, width="stretch", hide_index=True)
 
     # Inspect single log
     st.subheader("Inspect Log Entry")

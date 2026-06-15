@@ -38,7 +38,7 @@ def render():
 
     # Display table
     st.subheader("All Users")
-    st.dataframe(users, use_container_width=True, hide_index=True)
+    st.dataframe(users, width="stretch", hide_index=True)
 
     # Inspect user
     st.subheader("Inspect User")

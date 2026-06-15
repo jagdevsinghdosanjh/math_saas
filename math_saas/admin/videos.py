@@ -61,7 +61,7 @@ def render():
     if not videos:
         st.info("No videos found.")
     else:
-        st.dataframe(videos, use_container_width=True, hide_index=True)
+        st.dataframe(videos, width="stretch", hide_index=True)
 
     # -----------------------------
     # ADD NEW VIDEO

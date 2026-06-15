@@ -44,7 +44,7 @@ def render():
     if not settings:
         st.info("No settings found.")
     else:
-        st.dataframe(settings, use_container_width=True, hide_index=True)
+        st.dataframe(settings, width="stretch", hide_index=True)
 
     # -----------------------------
     # UPDATE / ADD SETTING

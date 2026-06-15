@@ -40,7 +40,7 @@ def render():
     if not chapters:
         st.info("No chapters found.")
     else:
-        st.dataframe(chapters, use_container_width=True, hide_index=True)
+        st.dataframe(chapters, width="stretch", hide_index=True)
 
     # -----------------------------
     # ADD NEW CHAPTER

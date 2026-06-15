@@ -178,12 +178,12 @@ def main():
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("Admin Login", use_container_width=True):
+        if st.button("Admin Login", width="stretch"):
             st.session_state["login_mode"] = "admin"
             st.rerun()
 
     with col2:
-        if st.button("Student Login", use_container_width=True):
+        if st.button("Student Login", width="stretch"):
             st.session_state["login_mode"] = "student"
             st.rerun()
 

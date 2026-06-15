@@ -61,7 +61,7 @@ def render():
     if not notes:
         st.info("No PDF notes found.")
     else:
-        st.dataframe(notes, use_container_width=True, hide_index=True)
+        st.dataframe(notes, width="stretch", hide_index=True)
 
     # -----------------------------
     # ADD NEW PDF NOTE
