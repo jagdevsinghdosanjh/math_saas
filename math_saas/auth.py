@@ -122,7 +122,7 @@ def app_container_style() -> None:
         <style>
         body {
             background: linear-gradient(135deg, #050608 0%, #0a0c10 100%);
-            color: #f8f9fa;
+            color: #00FFFF;
             font-family: 'Inter', sans-serif;
         }
         .neon-card {
