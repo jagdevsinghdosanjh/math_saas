@@ -1,4 +1,32 @@
+import streamlit as st
 from math_saas.subscriptions.payment_callback import handle_payment_callback
+from math_saas.student.dashboard import get_user_active_subscription
+
+
+def render_subscriptions_page():
+    st.markdown("<h3>Subscription</h3>", unsafe_allow_html=True)
+
+    student = st.session_state.get("student")
+    if not isinstance(student, dict):
+        st.error("Please login as student.")
+        return
+
+    user_id = str(student.get("id") or "")
+
+    sub = get_user_active_subscription(user_id)
+
+    if sub is None:
+        st.info("You do not have an active subscription.")
+        st.button("Buy Subscription")
+        return
+
+    plan = sub.get("plan_code", "Unknown")
+    expires = sub.get("expires_at", "Unknown")
+
+    st.success("You have an active subscription.")
+    st.write(f"**Plan:** {plan}")
+    st.write(f"**Expires:** {expires}")
+
 
 params = st.query_params
 

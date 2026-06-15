@@ -3,11 +3,11 @@ from typing import Any, Dict, List
 
 from math_saas.utils.db import get_supabase
 from math_saas.auth import TEXT_MUTED
-from math_saas.subscriptions.core import get_active_subscription
+from math_saas.student.dashboard import get_user_active_subscription   # NEW
 
 
 # ---------------------------------------------------------
-# SAFE FLOAT CONVERSION (Pylance-clean)
+# SAFE FLOAT CONVERSION
 # ---------------------------------------------------------
 def safe_float(value: Any) -> float:
     try:
@@ -17,9 +17,9 @@ def safe_float(value: Any) -> float:
 
 
 # ---------------------------------------------------------
-# FETCH CHAPTERS
+# FETCH CHAPTERS (Typed + Clean)
 # ---------------------------------------------------------
-def _fetch_chapters(grade: str, board: str) -> List[Dict[str, Any]]:
+def fetch_chapters(grade: str, board: str) -> List[Dict[str, Any]]:
     sb = get_supabase()
 
     try:
@@ -32,8 +32,8 @@ def _fetch_chapters(grade: str, board: str) -> List[Dict[str, Any]]:
             .execute()
         )
 
-        raw = res.data or []
-        return [row for row in raw if isinstance(row, dict)]
+        data = res.data or []
+        return [row for row in data if isinstance(row, dict)]
 
     except Exception as exc:
         st.error(f"Error loading chapters: {exc}")
@@ -41,9 +41,9 @@ def _fetch_chapters(grade: str, board: str) -> List[Dict[str, Any]]:
 
 
 # ---------------------------------------------------------
-# FETCH PROGRESS
+# FETCH PROGRESS (Typed + Clean)
 # ---------------------------------------------------------
-def _fetch_progress(user_id: str) -> Dict[str, float]:
+def fetch_progress(user_id: str) -> Dict[str, float]:
     sb = get_supabase()
 
     try:
@@ -58,16 +58,55 @@ def _fetch_progress(user_id: str) -> Dict[str, float]:
         progress_map: Dict[str, float] = {}
 
         for row in raw:
-            if not isinstance(row, dict):
-                continue
-
-            cid = str(row.get("chapter_id", ""))
-            progress_map[cid] = safe_float(row.get("progress", 0))
+            if isinstance(row, dict):
+                cid = str(row.get("chapter_id", ""))
+                progress_map[cid] = safe_float(row.get("progress", 0))
 
         return progress_map
 
     except Exception:
         return {}
+
+
+# ---------------------------------------------------------
+# CHAPTER CARD COMPONENT
+# ---------------------------------------------------------
+def render_chapter_card(
+    chapter: Dict[str, Any],
+    progress: float,
+    locked: bool
+) -> None:
+
+    cid = str(chapter.get("id", ""))
+    chapter_name = str(chapter.get("chapter_name", "Untitled"))
+    chapter_key = str(chapter.get("chapter_key", ""))
+
+    st.markdown(
+        f"""
+        <div class="neon-card" style="margin-bottom:16px;">
+            <h4 style="margin:0;">{chapter_name}</h4>
+            <p style="color:{TEXT_MUTED}; margin:4px 0 8px 0;">
+                Key: {chapter_key}
+            </p>
+            <p style="color:{TEXT_MUTED}; margin:0;">
+                {'Premium Chapter 🔒' if locked else 'Accessible ✔️'}
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.progress(progress)
+
+    if locked:
+        st.button("Unlock with Subscription", key=f"unlock_{cid}", disabled=True)
+    else:
+        if st.button("Open Chapter", key=f"open_{cid}"):
+            st.session_state["chapter_id"] = cid
+            st.session_state["page"] = "chapter_detail"
+            st.rerun()
+
+    st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------
@@ -89,50 +128,24 @@ def render_chapters_page() -> None:
         st.error("Invalid student session.")
         return
 
-    active_sub = get_active_subscription(user_id)
+    # NEW — uses your refactored subscription fetcher
+    active_sub = get_user_active_subscription(user_id)
     has_premium = active_sub is not None
 
-    chapters = _fetch_chapters(grade, board)
-    progress_map = _fetch_progress(user_id)
+    chapters = fetch_chapters(grade, board)
+    progress_map = fetch_progress(user_id)
 
     if not chapters:
         st.info("No chapters available for your grade/board.")
         return
 
-    for ch in chapters:
-        cid = str(ch.get("id", ""))
-        chapter_name = str(ch.get("chapter_name", "Untitled"))
-        chapter_key = str(ch.get("chapter_key", ""))
+    for chapter in chapters:
+        cid = str(chapter.get("id", ""))
+        chapter_key = str(chapter.get("chapter_key", ""))
 
         premium = chapter_key.lower().startswith("p_")
         locked = premium and not has_premium
 
-        # Pylance-clean float
         progress = safe_float(progress_map.get(cid, 0))
 
-        st.markdown(
-            f"""
-            <div class="neon-card" style="margin-bottom:16px;">
-                <h4 style="margin:0;">{chapter_name}</h4>
-                <p style="color:{TEXT_MUTED}; margin:4px 0 8px 0;">
-                    Key: {chapter_key}
-                </p>
-                <p style="color:{TEXT_MUTED}; margin:0;">
-                    {'Premium Chapter 🔒' if locked else 'Accessible ✔️'}
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        st.progress(progress)
-
-        if locked:
-            st.button("Unlock with Subscription", key=f"unlock_{cid}", disabled=True)
-        else:
-            if st.button("Open Chapter", key=f"open_{cid}"):
-                st.session_state["chapter_id"] = cid
-                st.session_state["page"] = "chapter_detail"
-                st.rerun()
-
-        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+        render_chapter_card(chapter, progress, locked)

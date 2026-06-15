@@ -3,8 +3,10 @@ from typing import Any, Dict, List
 
 from math_saas.utils.db import get_supabase
 from math_saas.utils.formatter import fix_math_rendering
-from math_saas.subscriptions.core import get_active_subscription
 from math_saas.auth import TEXT_MUTED
+from math_saas.student.dashboard import get_user_active_subscription
+
+# from math_saas.subscriptions.core import get_active_subscription
 
 
 # ---------------------------------------------------------
@@ -44,8 +46,10 @@ def render_public_content():
     user_id = student.get("id") if isinstance(student, dict) else None
 
     # Subscription check
-    sub = get_active_subscription(user_id) if user_id else None
+# Subscription check (NEW)
+    sub = get_user_active_subscription(user_id) if user_id else None
     has_access = sub is not None
+
 
     # Render each content card
     for item in items:

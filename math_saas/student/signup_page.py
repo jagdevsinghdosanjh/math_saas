@@ -1,9 +1,7 @@
 # math_saas/student/signup_page.py
 
 import streamlit as st
-
 from math_saas.utils.db import get_supabase
-from math_saas.subscriptions.core import create_subscription
 
 
 def render_signup_page() -> None:
@@ -19,7 +17,7 @@ def render_signup_page() -> None:
         sb = get_supabase()
 
         # ---------------------------------------------------------
-        # STEP 0 — CHECK IF EMAIL ALREADY EXISTS (prevents rate-limit)
+        # STEP 0 — CHECK IF EMAIL ALREADY EXISTS
         # ---------------------------------------------------------
         try:
             res = sb.auth.admin.list_users()
@@ -30,8 +28,7 @@ def render_signup_page() -> None:
                     st.error("Email already registered. Please log in instead.")
                     return
         except Exception:
-            # If admin API restricted, skip silently
-            pass
+            pass  # admin API may be restricted
 
         # ---------------------------------------------------------
         # STEP 1 — CREATE AUTH USER
@@ -86,7 +83,7 @@ def render_signup_page() -> None:
                 return
 
         # ---------------------------------------------------------
-        # STEP 4 — CREATE FREE SUBSCRIPTION (ONLY IF NONE EXISTS)
+        # STEP 4 — CREATE FREE SUBSCRIPTION (DIRECT DB INSERT)
         # ---------------------------------------------------------
         try:
             existing_sub = (
@@ -102,13 +99,15 @@ def render_signup_page() -> None:
 
         if not existing_sub:
             try:
-                create_subscription(
-                    user_id=user_id,
-                    plan_code="FREE",
-                    status="active",
-                    amount=0,
-                    currency="INR",
-                )
+                sb.table("subscriptions").insert(
+                    {
+                        "user_id": user_id,
+                        "plan_code": "FREE",
+                        "status": "active",
+                        "amount": 0,
+                        "currency": "INR",
+                    }
+                ).execute()
             except Exception:
                 pass  # ignore duplicate subscription errors
 
