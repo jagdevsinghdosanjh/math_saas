@@ -5,6 +5,7 @@ from math_saas.utils.db import get_supabase
 
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
+ACCENT = "#00ff88"   # neon green accent used across UI
 
 
 # ------------------------------------------------------------
@@ -167,10 +168,21 @@ def restore_session() -> None:
 
 
 def logout() -> None:
-    st.session_state.clear()
-    st.query_params = {}
-    st.markdown("<meta http-equiv='refresh' content='0; url=/' />", unsafe_allow_html=True)
-    st.stop()
+    # Clear session
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+
+    # Clear query params
+    st.query_params.clear()
+
+    # Force immediate rerun in SAME TAB
+    st.rerun()
+
+# def logout() -> None:
+#     st.session_state.clear()
+#     st.query_params = {}
+#     st.markdown("<meta http-equiv='refresh' content='0; url=/' />", unsafe_allow_html=True)
+#     st.stop()
 
 
 # ------------------------------------------------------------
