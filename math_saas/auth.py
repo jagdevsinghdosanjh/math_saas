@@ -15,22 +15,127 @@ def app_container_style() -> None:
     st.markdown(
         """
         <style>
+
+        /* ------------------------------
+           GLOBAL BACKGROUND
+        ------------------------------ */
         body {
-            background: linear-gradient(135deg, #050608 0%, #0a0c10 100%);
+            background: radial-gradient(circle at 20% 20%, #0f1115, #050608 60%);
             color: #f8f9fa;
             font-family: 'Inter', sans-serif;
+            transition: background 0.4s ease-in-out;
         }
+
+        /* ------------------------------
+           GLASS EFFECT CARDS
+        ------------------------------ */
         .neon-card {
-            background: #121417;
+            background: rgba(18, 20, 23, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-radius: 14px;
             padding: 20px;
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 0 18px rgba(0,255,136,0.25);
+            border: 1px solid rgba(0,255,136,0.25);
+            box-shadow: 0 0 22px rgba(0,255,136,0.18);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
+
+        .neon-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 28px rgba(0,255,136,0.35);
+        }
+
+        /* ------------------------------
+           HEADINGS
+        ------------------------------ */
+        h1, h2, h3, h4 {
+            color: #00ff88;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        /* ------------------------------
+           PARAGRAPHS
+        ------------------------------ */
+        p {
+            color: #b5b8c2;
+            line-height: 1.6;
+        }
+
+        /* ------------------------------
+           STREAMLIT WIDGETS
+        ------------------------------ */
+        .stButton>button {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: black;
+            border-radius: 8px;
+            padding: 8px 18px;
+            border: none;
+            font-weight: 600;
+            transition: 0.25s ease;
+        }
+
+        .stButton>button:hover {
+            background: linear-gradient(135deg, #00ffaa, #00dd77);
+            transform: translateY(-2px);
+            box-shadow: 0 0 12px rgba(0,255,136,0.45);
+        }
+
+        /* ------------------------------
+           TABS
+        ------------------------------ */
+        .stTabs [data-baseweb="tab"] {
+            background: #0d0f12;
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-right: 6px;
+            color: #9ca3af;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .stTabs [aria-selected="true"] {
+            background: #00ff88 !important;
+            color: black !important;
+            font-weight: 600;
+            border: 1px solid #00ff88;
+        }
+
+        /* ------------------------------
+           SCROLLBAR
+        ------------------------------ */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 10px;
+        }
+
         </style>
         """,
         unsafe_allow_html=True,
     )
+
+# def app_container_style() -> None:
+#     st.markdown(
+#         """
+#         <style>
+#         body {
+#             background: linear-gradient(135deg, #050608 0%, #0a0c10 100%);
+#             color: #f8f9fa;
+#             font-family: 'Inter', sans-serif;
+#         }
+#         .neon-card {
+#             background: #121417;
+#             border-radius: 14px;
+#             padding: 20px;
+#             border: 1px solid rgba(255,255,255,0.08);
+#             box-shadow: 0 0 18px rgba(0,255,136,0.25);
+#         }
+#         </style>
+#         """,
+#         unsafe_allow_html=True,
+#     )
 
 
 # ------------------------------------------------------------
