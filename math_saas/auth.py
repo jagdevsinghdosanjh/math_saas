@@ -3,10 +3,9 @@ import re
 from typing import Any, Dict, List, cast
 from math_saas.utils.db import get_supabase
 
-TEXT_MUTED = "#00FFFF"
-TEXT_MAIN = "#f54910"
-ACCENT = "#00FFFF"
-
+TEXT_MUTED = "#a0a6b1"
+TEXT_MAIN = "#f8f9fa"
+ACCENT = "#00ff88"   # neon green accent used across UI
 
 # ------------------------------------------------------------
 # GLOBAL STYLE
