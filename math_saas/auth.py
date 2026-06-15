@@ -5,7 +5,7 @@ from math_saas.utils.db import get_supabase
 
 TEXT_MUTED = "#1f49e2"
 TEXT_MAIN = "#f54910"
-ACCENT = "#03100a"
+ACCENT = "#00FFFF"
 
 
 # ------------------------------------------------------------
