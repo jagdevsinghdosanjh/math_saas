@@ -129,7 +129,7 @@ def app_container_style() -> None:
             background: #00FFFF;
             border-radius: 14px;
             padding: 20px;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(55,55,55,0.08);
             box-shadow: 0 0 18px rgba(0,255,136,0.25);
         }
         </style>
