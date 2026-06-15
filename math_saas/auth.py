@@ -189,17 +189,25 @@ def restore_session() -> None:
     st.session_state["jwt"] = token
     st.session_state[role] = user
 
-
-
 def logout() -> None:
-    # Clear session
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
+    # Remove only authentication-related keys
+    keys_to_clear = [
+        "student",
+        "admin",
+        "role",
+        "jwt",
+        "authenticated",
+        "login_mode",
+    ]
 
-    # Clear query params
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
+
+    # Remove token + role from query params
     st.query_params.clear()
 
-    # Force immediate rerun in SAME TAB
+    # Force a clean rerun
     st.rerun()
 
 # ------------------------------------------------------------
