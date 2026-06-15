@@ -48,7 +48,7 @@ def app_container_style() -> None:
            HEADINGS
         ------------------------------ */
         h1, h2, h3, h4 {
-            color: red;
+            color: #00ff88;
             letter-spacing: 0.5px;
             font-weight: 600;
         }
@@ -57,7 +57,7 @@ def app_container_style() -> None:
            PARAGRAPHS
         ------------------------------ */
         p {
-            color: red;
+            color: #b5b8c2;
             line-height: 1.6;
         }
 
@@ -66,7 +66,7 @@ def app_container_style() -> None:
         ------------------------------ */
         .stButton>button {
             background: linear-gradient(135deg, #00ff88, #00cc6a);
-            color: aqua;
+            color: black;
             border-radius: 8px;
             padding: 8px 18px;
             border: none;
@@ -88,7 +88,7 @@ def app_container_style() -> None:
             border-radius: 8px;
             padding: 10px 16px;
             margin-right: 6px;
-            color: #00FFFF;
+            color: #9ca3af;
             border: 1px solid rgba(255,255,255,0.08);
         }
 
