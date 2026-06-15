@@ -188,7 +188,8 @@ def render_public_content() -> None:
     for item in items:
         title: str = str(item.get("title", "Untitled"))
         body_raw: Any = item.get("body", "")
-        body: str = clean_math(body_raw)
+        body: str = sanitize_html(clean_math(body_raw))
+        # body: str = clean_math(body_raw)
 
         st.markdown(f"### {title}")
         st.markdown(body, unsafe_allow_html=True)
