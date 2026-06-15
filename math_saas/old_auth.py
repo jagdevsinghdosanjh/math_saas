@@ -139,56 +139,61 @@ def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     # FULL REPLACEMENT — stable across refresh
     st.query_params = {"token": jwt, "role": role}
 
-def restore_session() -> None:
-    """
-    Restores a logged-in session using token + role stored in query params.
-    Safe against logout loops, Streamlit Cloud caching, and missing tokens.
-    """
 
-    # Extract query params safely
+# def restore_session() -> None:
+#     raw_params = st.query_params
+#     params: Dict[str, str] = dict(raw_params) if isinstance(raw_params, dict) else {}
+
+#     token = params.get("token")
+#     role = params.get("role")
+
+#     if not token or not role:
+#         return
+
+#     if "student" in st.session_state or "admin" in st.session_state:
+#         return
+
+#     sb = get_supabase()
+#     try:
+#         user_resp = sb.auth.get_user(token)
+#     except Exception:
+#         return
+
+#     user = getattr(user_resp, "user", None) if user_resp is not None else None
+#     if not user:
+#         return
+
+#     st.session_state["jwt"] = token
+#     st.session_state[role] = user
+def restore_session() -> None:
     raw_params = st.query_params
     params: Dict[str, str] = dict(raw_params) if isinstance(raw_params, dict) else {}
 
-    # ---------------------------------------------------------
-    # 1. Prevent auto-login immediately after logout
-    # ---------------------------------------------------------
+    # Prevent auto-login after logout
     if params.get("student_logout") == "true" or params.get("admin_logout") == "true":
         return
 
-    # ---------------------------------------------------------
-    # 2. Extract token + role from URL
-    # ---------------------------------------------------------
     token = params.get("token")
     role = params.get("role")
 
     if not token or not role:
         return
 
-    # ---------------------------------------------------------
-    # 3. If already logged in, do nothing
-    # ---------------------------------------------------------
     if "student" in st.session_state or "admin" in st.session_state:
         return
 
-    # ---------------------------------------------------------
-    # 4. Validate token with Supabase
-    # ---------------------------------------------------------
     sb = get_supabase()
     try:
         user_resp = sb.auth.get_user(token)
     except Exception:
         return
 
-    user = getattr(user_resp, "user", None)
+    user = getattr(user_resp, "user", None) if user_resp is not None else None
     if not user:
         return
 
-    # ---------------------------------------------------------
-    # 5. Restore session state
-    # ---------------------------------------------------------
     st.session_state["jwt"] = token
     st.session_state[role] = user
-
 
 
 def logout() -> None:
@@ -201,6 +206,13 @@ def logout() -> None:
 
     # Force immediate rerun in SAME TAB
     st.rerun()
+
+# def logout() -> None:
+#     st.session_state.clear()
+#     st.query_params = {}
+#     st.markdown("<meta http-equiv='refresh' content='0; url=/' />", unsafe_allow_html=True)
+#     st.stop()
+
 
 # ------------------------------------------------------------
 # ROLE HELPERS
