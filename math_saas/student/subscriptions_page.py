@@ -56,7 +56,7 @@ def render_checkout_page(user_id: str, user_email: str):
             if not order:
                 st.error("Failed to create order.")
                 return
-            st.switch_page("razorpay_checkout.py",
+            st.switch_page("pages/razorpay_checkout.py",
                            query_params={
                                "order_id": order["order_id"],
                                "amount": order["amount"],
