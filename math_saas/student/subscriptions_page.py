@@ -1,6 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components   # <-- FIXED
-
+   
 from math_saas.subscriptions.payment_callback import handle_payment_callback
 from math_saas.subscriptions.core import create_subscription_order
 from math_saas.student.dashboard import get_user_active_subscription
@@ -69,7 +69,10 @@ def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
     key_id = os.getenv("RAZORPAY_KEY_ID")
 
     checkout_html = f"""
+    <html>
+    <body>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
     <script>
         var options = {{
             "key": "{key_id}",
@@ -78,11 +81,16 @@ def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
             "name": "Math Hub",
             "description": "Subscription Payment",
             "order_id": "{order_id}",
+
+            // 🔥 FIXED: Razorpay does NOT return order_id in response
+            // We must pass it manually
             "handler": function (response) {{
-                window.location.href = "?order_id=" + response.razorpay_order_id
+                window.location.href =
+                    "?order_id={order_id}"
                     + "&payment_id=" + response.razorpay_payment_id
                     + "&signature=" + response.razorpay_signature;
             }},
+
             "prefill": {{
                 "email": "{user_email}"
             }},
@@ -90,15 +98,17 @@ def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
                 "color": "#00ff88"
             }}
         }};
+
         var rzp = new Razorpay(options);
         rzp.open();
     </script>
+
+    </body>
+    </html>
     """
 
-    # components.html(checkout_html, height=50)   # <-- FIXED
-    components.html(checkout_html, width=850,height=600, scrolling=True)
-
-
+    # 🔥 FIXED: Popup was tiny — now full size
+    components.html(checkout_html, height=900, width=800, scrolling=True)
 
 def _handle_payment_query_params():
     params = st.query_params
