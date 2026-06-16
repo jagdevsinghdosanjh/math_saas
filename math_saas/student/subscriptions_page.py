@@ -56,13 +56,6 @@ def render_checkout_page(user_id: str, user_email: str):
             if not order:
                 st.error("Failed to create order.")
                 return
-
-            # launch_razorpay_checkout(
-            #     order_id=order["order_id"],
-            #     amount=order["amount"],
-            #     user_email=user_email,
-            # )
-            # st.stop()
             st.switch_page("razorpay_checkout.py",
                            query_params={
                                "order_id": order["order_id"],
@@ -70,7 +63,13 @@ def render_checkout_page(user_id: str, user_email: str):
                                "email": user_email
                                }
                            )
-
+            # launch_razorpay_checkout(
+            #     order_id=order["order_id"],
+            #     amount=order["amount"],
+            #     user_email=user_email,
+            # )
+            # st.stop()
+            
 
 def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
     import streamlit.components.v1 as components   # <-- FIXED
