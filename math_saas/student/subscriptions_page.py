@@ -1,5 +1,5 @@
 import streamlit as st
-import streamlit.components.v1 as components   # <-- FIXED
+# import streamlit.components.v1 as components   # <-- FIXED
    
 from math_saas.subscriptions.payment_callback import handle_payment_callback
 from math_saas.subscriptions.core import create_subscription_order
@@ -66,6 +66,7 @@ def render_checkout_page(user_id: str, user_email: str):
 
 
 def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
+    import streamlit.components.v1 as components   # <-- FIXED
     key_id = os.getenv("RAZORPAY_KEY_ID")
 
     checkout_html = f"""
