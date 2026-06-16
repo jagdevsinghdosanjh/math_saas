@@ -66,6 +66,7 @@ def render_checkout_page(user_id: str, user_email: str):
 
 
 def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
+    import streamlit.components.v1 as components
     key_id = os.getenv("RAZORPAY_KEY_ID")
 
     checkout_html = f"""
@@ -82,10 +83,8 @@ def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
             "description": "Subscription Payment",
             "order_id": "{order_id}",
 
-            // 🔥 FIXED: Razorpay does NOT return order_id in response
-            // We must pass it manually
             "handler": function (response) {{
-                window.location.href =
+                window.parent.location.href =
                     "?order_id={order_id}"
                     + "&payment_id=" + response.razorpay_payment_id
                     + "&signature=" + response.razorpay_signature;
@@ -107,7 +106,6 @@ def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
     </html>
     """
 
-    # 🔥 FIXED: Popup was tiny — now full size
     components.html(checkout_html, height=900, width=800, scrolling=True)
 
 def _handle_payment_query_params():
