@@ -115,6 +115,27 @@ def app_container_style() -> None:
         unsafe_allow_html=True,
     )
 
+# def app_container_style() -> None:
+#     st.markdown(
+#         """
+#         <style>
+#         body {
+#             background: linear-gradient(135deg, #050608 0%, #0a0c10 100%);
+#             color: #00FFFF;
+#             font-family: 'Inter', sans-serif;
+#         }
+#         .neon-card {
+#             background: #00FFFF;
+#             border-radius: 14px;
+#             padding: 20px;
+#             border: 1px solid rgba(55,55,55,0.08);
+#             box-shadow: 0 0 18px rgba(0,255,136,0.25);
+#         }
+#         </style>
+#         """,
+#         unsafe_allow_html=True,
+#     )
+
 def sanitize_html(text: str) -> str:
     if not isinstance(text, str):
         return ""
@@ -292,6 +313,36 @@ def restore_session() -> None:
     st.session_state["jwt"] = token
     st.session_state[role] = profile_raw
     st.session_state["role"] = role
+
+# def restore_session() -> None:
+#     params = dict(st.query_params)
+
+#     # Prevent auto-login after logout
+#     if params.get("student_logout") == "true" or params.get("admin_logout") == "true":
+#         return
+
+#     token = params.get("token")
+#     role = params.get("role")
+
+#     if not token or not role:
+#         return
+
+#     # Already logged in
+#     if "student" in st.session_state or "admin" in st.session_state:
+#         return
+
+#     sb = get_supabase()
+#     try:
+#         user_resp = sb.auth.get_user(token)
+#     except Exception:
+#         return
+
+#     user = getattr(user_resp, "user", None)
+#     if not user:
+#         return
+
+#     st.session_state["jwt"] = token
+#     st.session_state[role] = user
 
 # ------------------------------------------------------------
 # LOGOUT (FINAL FIXED VERSION)
