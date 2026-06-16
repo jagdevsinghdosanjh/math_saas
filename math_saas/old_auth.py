@@ -1,7 +1,7 @@
 import streamlit as st
 import re
 from typing import Any, Dict, List, cast
-from math_saas.utils.db import get_supabase
+from utils.db import get_supabase
 
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"

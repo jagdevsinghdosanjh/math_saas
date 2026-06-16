@@ -1,9 +1,9 @@
 import streamlit as st
-from math_saas.auth import logout, apply_dark_theme, apply_light_theme
-from math_saas.admin.admin_app import run_admin
-from math_saas.student.student_app import run_student
-from math_saas.student.public_content import render_public_content
-from math_saas.utils.db import get_supabase
+from auth import logout, apply_dark_theme, apply_light_theme
+from admin.admin_app import run_admin
+from student.student_app import run_student
+from student.public_content import render_public_content
+from utils.db import get_supabase
 
 # ---------------------------------------------------------
 # GENERIC LOGIN HANDLER

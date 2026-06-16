@@ -1,18 +1,18 @@
 import streamlit as st
 from typing import Dict
 
-from math_saas.auth import (
+from auth import (
     restore_session,
     logout,
     apply_dark_theme,
     apply_light_theme,
     set_logged_in_user,
 )
-from math_saas.admin.admin_app import run_admin
-from math_saas.student.student_app import run_student
-from math_saas.student.public_content import render_public_content
-from math_saas.student.signup_page import render_signup_page
-from math_saas.utils.db import get_supabase
+from admin.admin_app import run_admin
+from student.student_app import run_student
+from student.public_content import render_public_content
+from student.signup_page import render_signup_page
+from utils.db import get_supabase
 
 
 # -------------------------------------------------
