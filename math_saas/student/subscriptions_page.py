@@ -63,14 +63,13 @@ def render_checkout_page(user_id: str, user_email: str):
             #     user_email=user_email,
             # )
             # st.stop()
-            st.switch_page(
-    "pages/razorpay_checkout.py",
-    query_params={
-        "order_id": order["order_id"],
-        "amount": order["amount"],
-        "email": user_email
-    }
-)
+            st.switch_page("razorpay_checkout.py",
+                           query_params={
+                               "order_id": order["order_id"],
+                               "amount": order["amount"],
+                               "email": user_email
+                               }
+                           )
 
 
 def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
