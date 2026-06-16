@@ -33,24 +33,6 @@ def get_user_active_subscription(user_id: str) -> Optional[Dict[str, Any]]:
     data = getattr(res, "data", None)
     return data if isinstance(data, dict) else None
 
-# def get_user_active_subscription(user_id: str) -> Optional[Dict[str, Any]]:
-#     """
-#     Returns the active subscription for a user.
-#     Uses maybe_single() to avoid PGRST116 errors.
-#     """
-#     res = (
-#         sb.table("subscriptions")
-#         .select("*")
-#         .eq("user_id", user_id)
-#         .eq("status", "active")
-#         .maybe_single()
-#         .execute()
-#     )
-
-#     data = res.data
-#     return data if isinstance(data, dict) else None
-
-
 # -----------------------------
 # UI Components
 # -----------------------------
