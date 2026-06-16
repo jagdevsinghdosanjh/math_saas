@@ -84,6 +84,7 @@ def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
             "order_id": "{order_id}",
 
             "handler": function (response) {{
+                // fallback
                 window.parent.location.href =
                     "?order_id={order_id}"
                     + "&payment_id=" + response.razorpay_payment_id
@@ -99,6 +100,15 @@ def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
         }};
 
         var rzp = new Razorpay(options);
+
+        // 🔥 CRITICAL FIX: This event ALWAYS fires, even inside iframe
+        rzp.on('payment.success', function(response) {{
+            window.parent.location.href =
+                "?order_id={order_id}"
+                + "&payment_id=" + response.razorpay_payment_id
+                + "&signature=" + response.razorpay_signature;
+        }});
+
         rzp.open();
     </script>
 
