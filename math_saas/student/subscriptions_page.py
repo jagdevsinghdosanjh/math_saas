@@ -66,7 +66,7 @@ def render_checkout_page(user_id: str, user_email: str):
             })
 
             # Navigate to the dedicated Razorpay checkout page
-            st.switch_page("/razorpay_checkout")
+            st.switch_page("./razorpay_checkout")
 
 
 def _handle_payment_query_params():
