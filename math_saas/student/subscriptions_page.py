@@ -1,8 +1,10 @@
 import streamlit as st
+import streamlit.components.v1 as components   # <-- FIXED
 
 from math_saas.subscriptions.payment_callback import handle_payment_callback
 from math_saas.subscriptions.core import create_subscription_order
 from math_saas.student.dashboard import get_user_active_subscription
+import os
 
 
 def render_subscriptions_page():
@@ -14,11 +16,10 @@ def render_subscriptions_page():
         return
 
     user_id = str(student.get("id") or "")
+    user_email = student.get("email", "")
 
-    # Handle Razorpay callback (if present)
     _handle_payment_query_params()
 
-    # Check active subscription
     sub = get_user_active_subscription(user_id)
 
     if sub is None:
@@ -29,7 +30,7 @@ def render_subscriptions_page():
             st.rerun()
 
         if st.session_state.get("checkout_mode"):
-            render_checkout_page(user_id)
+            render_checkout_page(user_id, user_email)
 
         return
 
@@ -41,7 +42,7 @@ def render_subscriptions_page():
     st.write(f"**Expires:** {expires}")
 
 
-def render_checkout_page(user_id: str):
+def render_checkout_page(user_id: str, user_email: str):
     st.subheader("Choose a Plan")
 
     plans = [
@@ -56,19 +57,45 @@ def render_checkout_page(user_id: str):
                 st.error("Failed to create order.")
                 return
 
-            order_id = order["order_id"]
-
-            # Redirect to Razorpay Checkout page (hosted)
-            # You can also embed Razorpay Checkout.js if you prefer
-            st.markdown(
-                f"""
-                <script>
-                    window.location.href = "https://checkout.razorpay.com/v1/checkout.js?order_id={order_id}";
-                </script>
-                """,
-                unsafe_allow_html=True,
+            launch_razorpay_checkout(
+                order_id=order["order_id"],
+                amount=order["amount"],
+                user_email=user_email,
             )
             st.stop()
+
+
+def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
+    key_id = os.getenv("RAZORPAY_KEY_ID")
+
+    checkout_html = f"""
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        var options = {{
+            "key": "{key_id}",
+            "amount": "{amount}",
+            "currency": "INR",
+            "name": "Math Hub",
+            "description": "Subscription Payment",
+            "order_id": "{order_id}",
+            "handler": function (response) {{
+                window.location.href = "?order_id=" + response.razorpay_order_id
+                    + "&payment_id=" + response.razorpay_payment_id
+                    + "&signature=" + response.razorpay_signature;
+            }},
+            "prefill": {{
+                "email": "{user_email}"
+            }},
+            "theme": {{
+                "color": "#00ff88"
+            }}
+        }};
+        var rzp = new Razorpay(options);
+        rzp.open();
+    </script>
+    """
+
+    components.html(checkout_html, height=10)   # <-- FIXED
 
 
 def _handle_payment_query_params():
@@ -83,9 +110,7 @@ def _handle_payment_query_params():
 
         if result["success"]:
             st.success("Payment successful! Subscription activated.")
-            # Clear checkout mode and query params
-            if "checkout_mode" in st.session_state:
-                del st.session_state["checkout_mode"]
+            st.session_state.pop("checkout_mode", None)
             st.query_params.clear()
             st.rerun()
         else:
