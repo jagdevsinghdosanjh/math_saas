@@ -95,7 +95,9 @@ def launch_razorpay_checkout(order_id: str, amount: int, user_email: str):
     </script>
     """
 
-    components.html(checkout_html, height=10)   # <-- FIXED
+    # components.html(checkout_html, height=50)   # <-- FIXED
+    components.html(checkout_html, width=350,height=600, scrolling=True)
+
 
 
 def _handle_payment_query_params():
