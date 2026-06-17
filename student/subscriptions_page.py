@@ -55,6 +55,7 @@ def render_checkout_page(user_id: str, user_email: str):
                 "amount": order["amount"],
                 "email": user_email
             })
+            st.switch_page()
 
             st.switch_page('razorpay_checkout')
 
