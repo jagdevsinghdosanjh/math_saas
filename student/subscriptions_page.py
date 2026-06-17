@@ -64,13 +64,19 @@ def render_checkout_page(user_id: str, user_email: str):
                 return
 
             # 2. Store values in query params for checkout page
+            # st.query_params.update({
+            #     "order_id": order["order_id"],
+            #     "amount": order["amount"],
+            #     "email": user_email,
+            # })
+
+            # # 3. Switch to checkout page
+            # st.switch_page("razorpay_checkout")
             st.query_params.update({
                 "order_id": order["order_id"],
                 "amount": order["amount"],
-                "email": user_email,
-            })
-
-            # 3. Switch to checkout page
+                "email": user_email
+                })
             st.switch_page("razorpay_checkout")
 
 
