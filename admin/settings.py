@@ -1,4 +1,4 @@
-﻿﻿﻿﻿import streamlit as st
+﻿﻿import streamlit as st
 from typing import Any, Dict, List
 
 from auth import require_admin
