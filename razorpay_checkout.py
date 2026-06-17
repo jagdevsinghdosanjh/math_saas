@@ -4,8 +4,8 @@ import os
 st.set_page_config(page_title="Processing Payment...", layout="centered")
 
 def main():
-    order_id = st.query_params.get("order_id", None)
-    amount = st.query_params.get("amount", None)
+    order_id = st.query_params.get("order_id")
+    amount = st.query_params.get("amount")
     email = st.query_params.get("email", "")
 
     if not order_id or not amount:

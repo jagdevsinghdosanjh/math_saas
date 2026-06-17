@@ -3,23 +3,19 @@ from subscriptions.payment_callback import handle_payment_callback
 from subscriptions.core import create_subscription_order
 from student.dashboard import get_user_active_subscription
 
-
 def render_subscriptions_page():
     st.markdown("<h3>Subscription</h3>", unsafe_allow_html=True)
 
-    # Ensure student is logged in
     student = st.session_state.get("student")
     if not isinstance(student, dict):
         st.error("Please login as student.")
         return
 
-    user_id = str(student.get("id") or "")
+    user_id = str(student["id"])
     user_email = student.get("email", "")
 
-    # Handle Razorpay callback if present
     _handle_payment_query_params()
 
-    # Check active subscription
     sub = get_user_active_subscription(user_id)
 
     if sub is None:
@@ -34,13 +30,9 @@ def render_subscriptions_page():
 
         return
 
-    # If subscription exists
-    plan = sub.get("plan_code", "Unknown")
-    expires = sub.get("expires_at", "Unknown")
-
     st.success("You have an active subscription.")
-    st.write(f"**Plan:** {plan}")
-    st.write(f"**Expires:** {expires}")
+    st.write(f"**Plan:** {sub.get('plan')}")
+    st.write(f"**Expires:** {sub.get('expires_at')}")
 
 
 def render_checkout_page(user_id: str, user_email: str):
@@ -58,25 +50,19 @@ def render_checkout_page(user_id: str, user_email: str):
                 st.error("Failed to create order.")
                 return
 
-            # Pass order details to Razorpay checkout page
             st.query_params.update({
                 "order_id": order["order_id"],
                 "amount": order["amount"],
                 "email": user_email
             })
 
-            # Navigate to the dedicated Razorpay checkout page
             st.switch_page("razorpay_checkout")
 
 
 def _handle_payment_query_params():
     params = st.query_params
 
-    if (
-        "order_id" in params
-        and "payment_id" in params
-        and "signature" in params
-    ):
+    if {"order_id", "payment_id", "signature"} <= params.keys():
         result = handle_payment_callback(
             params["order_id"],
             params["payment_id"],
@@ -84,7 +70,7 @@ def _handle_payment_query_params():
         )
 
         if result["success"]:
-            st.success("Payment successful! Subscription activated.")
+            st.success("Payment successful! Subscription will activate shortly.")
             st.session_state.pop("checkout_mode", None)
             st.query_params.clear()
             st.rerun()
