@@ -56,7 +56,7 @@ def render_checkout_page(user_id: str, user_email: str):
                 "email": user_email
             })
 
-            st.switch_page("razorpay checkout")
+            st.switch_page("razorpay_checkout")
 
 
 def _handle_payment_query_params():
