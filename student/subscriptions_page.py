@@ -11,18 +11,19 @@ from auth import TEXT_MUTED
 # -------------------------------------------------
 # MAIN PAGE
 # -------------------------------------------------
-def render_subscriptions_page(sb=None, user=None) -> None:
+def render_subscriptions_page() -> None:
     st.header("Subscription")
 
-    # -------------------------------------------------
-    # RESTORE SUPABASE SESSION + REQUIRE AUTH USER
-    # -------------------------------------------------
-    if sb is None:
-        sb = get_supabase()
+    sb = get_supabase()
 
-    user = require_user(sb)   # <-- CRITICAL FIX
+    # Correct Supabase user extraction
+    res = sb.auth.get_user()
+    user = res.user
+    if not user:
+        st.error("You are not logged in.")
+        st.stop()
+
     user_id = user.id
-
     st.write("Auth user:", user)  # Debug: should NOT be None now
 
     # -------------------------------------------------
