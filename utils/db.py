@@ -1,15 +1,42 @@
 import streamlit as st
 from supabase import create_client, Client
 
+
+# ------------------------------------------------------------
+# CREATE CLIENT (ANON KEY ONLY)
+# ------------------------------------------------------------
+def _create_client() -> Client:
+    url = st.secrets["supabase"]["url"]
+    key = st.secrets["supabase"]["anon_key"]
+    return create_client(url, key)
+
+
+# ------------------------------------------------------------
+# GET CLIENT (NO RESTORE HERE)
+# ------------------------------------------------------------
 def get_supabase() -> Client:
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
+    """
+    Returns a Supabase client.
+    Session restore is handled ONLY in auth.py.
+    """
+    return _create_client()
 
-    sb = create_client(url, key)
 
-    # DO NOT restore session here.
-    # Session restore is handled ONLY in auth.py
-    return sb
+# ------------------------------------------------------------
+# REQUIRE AUTHENTICATED USER
+# ------------------------------------------------------------
+def require_user(sb: Client = None):
+    if sb is None:
+        sb = get_supabase()
+
+    res = sb.auth.get_user()
+    user = res.user if res else None
+
+    if not user:
+        st.error("You are not logged in.")
+        st.stop()
+
+    return user
 
 # import streamlit as st
 # from supabase import create_client
