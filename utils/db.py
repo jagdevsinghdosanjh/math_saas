@@ -1,77 +1,58 @@
 import streamlit as st
 from supabase import create_client
 
-def get_supabase():
+
+# ------------------------------------------------------------
+# CREATE CLIENT (ANON KEY ONLY)
+# ------------------------------------------------------------
+def _create_client():
     url = st.secrets["supabase"]["url"]
-    key = st.secrets["supabase"]["anon_key"]
+    key = st.secrets["supabase"]["anon_key"]   # MUST be anon key
     return create_client(url, key)
 
-# import os
-# import streamlit as st
-# from supabase import create_client
 
-# _supabase = None
-
-# def get_supabase():
-#     """Return a singleton Supabase client (service-role for admin panel)."""
-
-#     global _supabase
-#     if _supabase is not None:
-#         return _supabase
-
-#     # Load secrets at runtime (cloud-safe)
-#     url = os.getenv("SUPABASE_URL")
-#     service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-
-#     if not url:
-#         raise RuntimeError("SUPABASE_URL missing")
-
-#     if not service_key:
-#         raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY missing")
-
-#     _supabase = create_client(url, service_key)
-#     return _supabase
-
-# from supabase import create_client
-# from math_saas.config import SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
-
-# _supabase = None
-
-# def get_supabase():
-#     """Return a singleton Supabase client (service-role for admin panel)."""
-
-#     if SUPABASE_URL is None:
-#         raise RuntimeError("SUPABASE_URL is not set in environment variables")
-
-#     if SUPABASE_SERVICE_ROLE_KEY is None:
-#         raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY is not set in environment variables")
-
-#     global _supabase
-#     if _supabase is None:
-#         _supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
-#     return _supabase
-
-# # from supabase import create_client
-# # from math_saas.config import SUPABASE_URL, SUPABASE_ANON_KEY
-
-# # # Singleton client
-# # _supabase = None
+# ------------------------------------------------------------
+# RESTORE SESSION (CRITICAL)
+# ------------------------------------------------------------
+def restore_session(sb):
+    """
+    Restores Supabase session from Streamlit session_state.
+    This is what keeps the user logged in across refreshes.
+    """
+    session = st.session_state.get("session")
+    if session:
+        access_token = session.get("access_token")
+        if access_token:
+            sb.auth.set_session(access_token)
 
 
-# # def get_supabase():
-# #     """Return a singleton Supabase client."""
+# ------------------------------------------------------------
+# GET CLIENT WITH RESTORED SESSION
+# ------------------------------------------------------------
+def get_supabase():
+    """
+    Returns a Supabase client with restored session.
+    Use this everywhere in the app.
+    """
+    sb = _create_client()
+    restore_session(sb)
+    return sb
 
-# #     # Pylance-safe checks
-# #     if SUPABASE_URL is None:
-# #         raise RuntimeError("SUPABASE_URL is not set in environment variables")
 
-# #     if SUPABASE_ANON_KEY is None:
-# #         raise RuntimeError("SUPABASE_ANON_KEY is not set in environment variables")
+# ------------------------------------------------------------
+# REQUIRE AUTHENTICATED USER
+# ------------------------------------------------------------
+def require_user(sb=None):
+    """
+    Ensures the user is logged in.
+    If not, stops the page.
+    """
+    if sb is None:
+        sb = get_supabase()
 
-# #     global _supabase
-# #     if _supabase is None:
-# #         _supabase =create_client(SUPABASE_URL, SERVICE_ROLE_KEY)
-# #         # create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+    user = sb.auth.get_user()
+    if not user:
+        st.error("You are not logged in.")
+        st.stop()
 
-# #     return _supabase
+    return user

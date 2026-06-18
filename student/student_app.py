@@ -6,7 +6,7 @@ from auth import (
     app_container_style,
     top_bar,
 )
-from utils.db import get_supabase
+from utils.db import get_supabase, require_user
 
 from student.dashboard import render_dashboard
 from student.chapters_page import render_chapters_page
@@ -20,9 +20,7 @@ from student.public_content import render_public_content
 # ---------------------------------------------------------
 def render_quiz_chapters() -> None:
     sb = get_supabase()
-    if sb is None:
-        st.warning("Unable to connect to Supabase.")
-        return
+    user = require_user(sb)   # <-- NEW: ensures Supabase session is valid
 
     try:
         res = (
@@ -68,11 +66,17 @@ def render_quiz_chapters() -> None:
 def run_student() -> None:
     app_container_style()
 
+    # Restore Supabase session
+    sb = get_supabase()
+    user = require_user(sb)   # <-- NEW: ensures Supabase user is valid
+
     # Logout via query params
     params = st.query_params
     if params.get("student_logout") == "true":
         logout()
         return
+
+    # Also enforce your existing role-based login
     require_student()
 
     top_bar("Math Hub Student Portal", "Student", "student_logout")
@@ -113,13 +117,13 @@ def run_student() -> None:
 
     with tab_dashboard:
         try:
-            routes["Dashboard"]()
+            routes["Dashboard"](sb, user)   # <-- pass sb + user
         except Exception as exc:
             st.info(f"Dashboard coming soon. ({exc})")
 
     with tab_chapters:
         try:
-            routes["Chapters"]()
+            routes["Chapters"](sb, user)
         except Exception as exc:
             st.info(f"Chapters page coming soon. ({exc})")
 
@@ -131,18 +135,18 @@ def run_student() -> None:
 
     with tab_subs:
         try:
-            routes["Subscription"]()
+            routes["Subscription"](sb, user)
         except Exception as exc:
             st.info(f"Subscription page coming soon. ({exc})")
 
     with tab_billing:
         try:
-            routes["Billing"]()
+            routes["Billing"](sb, user)
         except Exception as exc:
             st.info(f"Billing page coming soon. ({exc})")
 
     with tab_public:
         try:
-            routes["Math & News"]()
+            routes["Math & News"](sb, user)
         except Exception as exc:
             st.info(f"Math & News page coming soon. ({exc})")
