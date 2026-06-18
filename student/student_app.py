@@ -19,8 +19,8 @@ from student.public_content import render_public_content
 # QUIZ CHAPTERS (STATIC QUIZ SYSTEM)
 # ---------------------------------------------------------
 def render_quiz_chapters() -> None:
-    sb = get_supabase()
-    user = require_user(sb)   # <-- NEW: ensures Supabase session is valid
+    user = require_user()          # Validate Streamlit session only
+    sb = get_supabase()            # Create Supabase client AFTER validation
 
     try:
         res = (
@@ -66,18 +66,18 @@ def render_quiz_chapters() -> None:
 def run_student() -> None:
     app_container_style()
 
-    # Restore Supabase session
+    # Validate login FIRST
+    user = require_user()
+    require_student()
+
+    # Create Supabase client AFTER login validation
     sb = get_supabase()
-    user = require_user(sb)   # <-- NEW: ensures Supabase user is valid
 
     # Logout via query params
     params = st.query_params
     if params.get("student_logout") == "true":
         logout()
         return
-
-    # Also enforce your existing role-based login
-    require_student()
 
     top_bar("Math Hub Student Portal", "Student", "student_logout")
 
@@ -117,7 +117,7 @@ def run_student() -> None:
 
     with tab_dashboard:
         try:
-            routes["Dashboard"](sb, user)   # <-- pass sb + user
+            routes["Dashboard"](sb, user)
         except Exception as exc:
             st.info(f"Dashboard coming soon. ({exc})")
 
