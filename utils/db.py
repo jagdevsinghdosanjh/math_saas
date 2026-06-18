@@ -1,9 +1,8 @@
-import streamlit as st
-from supabase import create_client, Client
 from typing import Optional, Any
+from supabase import Client
+import streamlit as st
 from utils.db import get_supabase
-
-
+from supabase import create_client
 # ------------------------------------------------------------
 # CREATE CLIENT (ANON KEY ONLY)
 # ------------------------------------------------------------
@@ -11,7 +10,6 @@ def _create_client() -> Client:
     url = st.secrets["supabase"]["url"]
     key = st.secrets["supabase"]["anon_key"]
     return create_client(url, key)
-
 
 # ------------------------------------------------------------
 # GET CLIENT (NO RESTORE HERE)
@@ -27,7 +25,8 @@ def get_supabase() -> Client:
 # ------------------------------------------------------------
 # REQUIRE AUTHENTICATED USER
 # ------------------------------------------------------------
-def require_user(sb: Optional[Client] = None) -> Client:
+
+def require_user(sb: Optional[Client] = None) -> Any:
     if sb is None:
         sb = get_supabase()
 
@@ -39,6 +38,7 @@ def require_user(sb: Optional[Client] = None) -> Client:
         st.stop()
 
     return user
+
 
 # import streamlit as st
 # from supabase import create_client
