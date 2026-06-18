@@ -1,6 +1,5 @@
 import streamlit as st
 from typing import Any, Dict, Optional
-from datetime import datetime
 
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
@@ -18,59 +17,21 @@ sb = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 # -----------------------------
-# SAFE HELPERS
-# -----------------------------
-def _safe_get_dict(data: Any) -> Dict[str, Any]:
-    return data if isinstance(data, dict) else {}
-
-
-def _safe_parse_iso(dt: Any) -> Optional[datetime]:
-    if isinstance(dt, str):
-        try:
-            return datetime.fromisoformat(dt)
-        except Exception:
-            return None
-    return None
-
-
-# -----------------------------
-# Subscription Fetcher (Corrected)
+# Subscription Fetcher (SAFE)
 # -----------------------------
 def get_user_active_subscription(user_id: str) -> Optional[Dict[str, Any]]:
-    """
-    Return the user's active subscription only if:
-    - status == 'active'
-    - expires_at is in the future
-    """
-
+    """Return active subscription row safely."""
     res = (
         sb.table("subscriptions")
         .select("*")
         .eq("user_id", user_id)
         .eq("status", "active")
-        .order("expires_at", desc=True)
-        .limit(1)
+        .maybe_single()
         .execute()
     )
 
-    data = res.data or []
-    if not data:
-        return None
-
-    sub = _safe_get_dict(data[0])
-
-    # Validate expiry
-    exp_raw = sub.get("expires_at")
-    exp_dt = _safe_parse_iso(exp_raw)
-
-    if exp_dt is None:
-        return None
-
-    if exp_dt < datetime.utcnow():
-        return None
-
-    return sub
-
+    data = getattr(res, "data", None)
+    return data if isinstance(data, dict) else None
 
 # -----------------------------
 # UI Components
