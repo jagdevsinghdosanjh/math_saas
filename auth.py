@@ -170,14 +170,13 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
 def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     """
     Secure login: session-only, no URL tokens.
-    Clears previous UI state but keeps Supabase session in st.session_state["session"]
-    (set in app.py) so restore_session can reattach.
+    Preserve Supabase session object.
     """
-    # Preserve Supabase session object if present
     supabase_session = st.session_state.get("session")
 
     st.session_state.clear()
 
+    # Restore Supabase session object
     if supabase_session is not None:
         st.session_state["session"] = supabase_session
 
@@ -185,15 +184,31 @@ def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     st.session_state["role"] = role
     st.session_state["jwt"] = jwt
 
-    # backward compatibility per-role key
+    # backward compatibility
     st.session_state[role] = user
 
+# def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
+#     """
+#     Secure login: session-only, no URL tokens.
+#     Clears previous UI state but keeps Supabase session in st.session_state["session"]
+#     (set in app.py) so restore_session can reattach.
+#     """
+#     # Preserve Supabase session object if present
+#     supabase_session = st.session_state.get("session")
+
+#     st.session_state.clear()
+
+#     if supabase_session is not None:
+#         st.session_state["session"] = supabase_session
+
+#     st.session_state["user"] = user
+#     st.session_state["role"] = role
+#     st.session_state["jwt"] = jwt
+
+#     # backward compatibility per-role key
+#     st.session_state[role] = user
 
 def restore_session() -> None:
-    """
-    Restore Supabase auth session from st.session_state["session"] on rerun.
-    This keeps sb.auth.get_user() working for student/admin pages.
-    """
     session = st.session_state.get("session")
     if not session:
         return
@@ -202,14 +217,30 @@ def restore_session() -> None:
     access_token = getattr(session, "access_token", None)
     refresh_token = getattr(session, "refresh_token", None)
 
-    if not access_token or not refresh_token:
-        return
-
-    try:
+    if access_token and refresh_token:
         sb.auth.set_session(access_token, refresh_token)
-    except Exception:
-        # If restore fails, we silently continue; UI will treat user as logged out.
-        return
+
+# def restore_session() -> None:
+#     """
+#     Restore Supabase auth session from st.session_state["session"] on rerun.
+#     This keeps sb.auth.get_user() working for student/admin pages.
+#     """
+#     session = st.session_state.get("session")
+#     if not session:
+#         return
+
+#     sb = get_supabase()
+#     access_token = getattr(session, "access_token", None)
+#     refresh_token = getattr(session, "refresh_token", None)
+
+#     if not access_token or not refresh_token:
+#         return
+
+#     try:
+#         sb.auth.set_session(access_token, refresh_token)
+#     except Exception:
+#         # If restore fails, we silently continue; UI will treat user as logged out.
+#         return
 
 
 # ------------------------------------------------------------
