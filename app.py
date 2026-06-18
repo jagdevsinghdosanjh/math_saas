@@ -47,6 +47,7 @@ def handle_login(email: str, password: str, role: str):
         st.error("Profile not found.")
         return None, None
 
+    # Role validation
     if role == "admin" and not profile_raw.get("is_admin", False):
         st.error("You are not an admin.")
         return None, None
@@ -72,6 +73,7 @@ def admin_login_form():
             set_logged_in_user(profile, "admin", jwt)
             st.rerun()
 
+
 # -------------------------------------------------
 # STUDENT LOGIN FORM
 # -------------------------------------------------
@@ -86,13 +88,15 @@ def student_login_form():
             set_logged_in_user(profile, "student", jwt)
             st.rerun()
 
+
 # -------------------------------------------------
 # MAIN ROUTER
 # -------------------------------------------------
 def main():
-    # MUST BE FIRST LINE
+    # No auto-login from URL anymore
     restore_session()
 
+    # Theme
     theme_choice = st.radio(
         "Choose Theme:",
         ["Dark (Neon)", "Light"],
@@ -104,23 +108,22 @@ def main():
     else:
         apply_dark_theme()
 
-    params: Dict[str, str] = dict(st.query_params)
+    # -----------------------------
+    # AUTH ROUTING
+    # -----------------------------
+    role = st.session_state.get("role")
 
-    if params.get("admin_logout") == "true":
-        logout()
-        return
-    if params.get("student_logout") == "true":
-        logout()
-        return
-
-    if "admin" in st.session_state:
+    if role == "admin":
         run_admin()
         return
 
-    if "student" in st.session_state:
+    if role == "student":
         run_student()
         return
 
+    # -----------------------------
+    # LOGIN GATEWAY
+    # -----------------------------
     st.markdown("<h2>Welcome to Student's Math Companion</h2>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
