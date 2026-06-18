@@ -7,13 +7,12 @@ from subscriptions.utils import format_inr, plan_name
 
 
 # ---------------------------------------------------------
-# FETCH ALL PAYMENTS (JOINED WITH SUBSCRIPTIONS + USERS)
+# FETCH ALL PAYMENTS (JOINED WITH SUBSCRIPTIONS)
 # ---------------------------------------------------------
 def _fetch_all_payments() -> List[Dict[str, Any]]:
     sb = get_supabase()
 
-    # Correct table: subscription_payments
-    # Correct joins: subscription_id → subscriptions, user_id → profiles
+    # Fetch payments with subscription + user info
     res = (
         sb.table("subscription_payments")
         .select(
@@ -61,14 +60,15 @@ def render():
         st.info("No payment records found.")
         return
 
+    # Build clean table rows
     rows = []
     for p in payments:
-        sub = p.get("subscriptions") or {}
-        user = p.get("profiles") or {}
+        sub = p.get("subscriptions", {}) or {}
+        user = p.get("profiles", {}) or {}
 
         rows.append(
             {
-                "User": user.get("full_name") or user.get("email", ""),
+                "User": user.get("full_name", "") or user.get("email", ""),
                 "Plan": plan_name(sub.get("plan_code", "")),
                 "Subscription Status": sub.get("status", ""),
                 "Payment Status": p.get("status", ""),
