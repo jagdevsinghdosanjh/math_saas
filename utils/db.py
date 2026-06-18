@@ -4,8 +4,8 @@ from typing import Optional, Any
 
 
 def _create_client() -> Client:
-    url = st.secrets["supabase"]["supabase"]["url"]
-    key = st.secrets["supabase"]["supabase"]["anon_key"]
+    url = st.secrets["supabase"]["url"]
+    key = st.secrets["supabase"]["anon_key"]
     return create_client(url, key)
 
 
