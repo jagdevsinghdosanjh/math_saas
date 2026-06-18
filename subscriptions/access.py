@@ -3,7 +3,6 @@ from typing import Any, Dict
 
 from subscriptions.core import get_active_subscription
 
-
 def require_student_logged_in() -> Dict[str, Any]:
     student = st.session_state.get("student")
     if not student:

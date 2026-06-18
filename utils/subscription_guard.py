@@ -24,16 +24,6 @@ def _safe_parse_iso(dt: Any) -> Optional[datetime]:
     except Exception:
         return None
 
-
-# def _safe_parse_iso(dt: Any) -> Optional[datetime]:
-#     if isinstance(dt, str):
-#         try:
-#             return datetime.fromisoformat(dt)
-#         except Exception:
-#             return None
-#     return None
-
-
 # -----------------------------
 # FETCH ACTIVE SUBSCRIPTION
 # -----------------------------
