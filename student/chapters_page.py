@@ -4,6 +4,9 @@ from typing import Any, Dict, List
 from utils.db import get_supabase
 from auth import TEXT_MUTED
 from student.dashboard import get_user_active_subscription   # NEW
+from utils.subscription_guard import require_active_subscription
+
+sub = require_active_subscription()
 
 
 # ---------------------------------------------------------

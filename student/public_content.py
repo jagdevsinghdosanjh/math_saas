@@ -5,6 +5,9 @@ from utils.db import get_supabase
 from utils.formatter import fix_math_rendering
 from auth import TEXT_MUTED
 from student.dashboard import get_user_active_subscription
+from utils.subscription_guard import require_active_subscription
+
+sub = require_active_subscription()
 
 
 # ---------------------------------------------------------
