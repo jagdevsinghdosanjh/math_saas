@@ -1,5 +1,7 @@
 import streamlit as st
 from supabase import create_client, Client
+from typing import Optional, Any
+from utils.db import get_supabase
 
 
 # ------------------------------------------------------------
@@ -25,7 +27,7 @@ def get_supabase() -> Client:
 # ------------------------------------------------------------
 # REQUIRE AUTHENTICATED USER
 # ------------------------------------------------------------
-def require_user(sb: Client = None):
+def require_user(sb: Optional[Client] = None) -> Client:
     if sb is None:
         sb = get_supabase()
 
