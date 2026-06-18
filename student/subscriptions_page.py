@@ -18,7 +18,7 @@ def render_subscriptions_page() -> None:
 
     # Correct Supabase user extraction
     res = sb.auth.get_user()
-    user = res.user
+    user = res.user if res else None
     if not user:
         st.error("You are not logged in.")
         st.stop()
