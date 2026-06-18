@@ -9,7 +9,9 @@ from auth import (
     set_logged_in_user,
 )
 from admin.admin_app import run_admin
+    # Admin portal
 from student.student_app import run_student
+    # Student portal
 from student.public_content import render_public_content
 from student.signup_page import render_signup_page
 from utils.db import get_supabase
@@ -34,6 +36,7 @@ def handle_login(email: str, password: str, role: str):
         st.error("Invalid login credentials")
         return None, None
 
+    # Fetch profile
     profile_raw = (
         sb.table("profiles")
         .select("*")
@@ -56,7 +59,8 @@ def handle_login(email: str, password: str, role: str):
         st.error("Students must login from Student Login.")
         return None, None
 
-    return profile_raw, session.access_token
+    # Return profile + FULL session (not just JWT)
+    return profile_raw, session
 
 
 # -------------------------------------------------
@@ -68,9 +72,13 @@ def admin_login_form():
     password = st.text_input("Password", type="password")
 
     if st.button("Login as Admin"):
-        profile, jwt = handle_login(email, password, "admin")
-        if profile and isinstance(jwt, str):
-            set_logged_in_user(profile, "admin", jwt)
+        profile, session = handle_login(email, password, "admin")
+        if profile and session:
+            # Store Supabase session for persistence
+            st.session_state["session"] = session
+
+            # Store UI session
+            set_logged_in_user(profile, "admin", session.access_token)
             st.rerun()
 
 
@@ -83,9 +91,13 @@ def student_login_form():
     password = st.text_input("Password", type="password")
 
     if st.button("Login as Student"):
-        profile, jwt = handle_login(email, password, "student")
-        if profile and isinstance(jwt, str):
-            set_logged_in_user(profile, "student", jwt)
+        profile, session = handle_login(email, password, "student")
+        if profile and session:
+            # Store Supabase session for persistence
+            st.session_state["session"] = session
+
+            # Store UI session
+            set_logged_in_user(profile, "student", session.access_token)
             st.rerun()
 
 
@@ -93,7 +105,7 @@ def student_login_form():
 # MAIN ROUTER
 # -------------------------------------------------
 def main():
-    # No auto-login from URL anymore
+    # Restore Supabase session (if exists)
     restore_session()
 
     # Theme
