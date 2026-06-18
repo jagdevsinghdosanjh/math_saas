@@ -12,11 +12,7 @@ def _create_client() -> Client:
 def get_supabase() -> Client:
     return _create_client()
 
-
-def require_user(sb: Optional[Client] = None) -> Any:
-    """
-    Trust the unified Streamlit session model instead of sb.auth.get_user().
-    """
+def require_user() -> dict:
     user = st.session_state.get("user")
 
     if not isinstance(user, dict):
@@ -24,6 +20,18 @@ def require_user(sb: Optional[Client] = None) -> Any:
         st.stop()
 
     return user
+
+# def require_user(sb: Optional[Client] = None) -> Any:
+#     """
+#     Trust the unified Streamlit session model instead of sb.auth.get_user().
+#     """
+#     user = st.session_state.get("user")
+
+#     if not isinstance(user, dict):
+#         st.error("You are not logged in.")
+#         st.stop()
+
+#     return user
 
 # import streamlit as st
 # from supabase import create_client, Client
