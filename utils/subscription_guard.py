@@ -11,14 +11,27 @@ from utils.db import get_supabase
 def _safe_get_dict(data: Any) -> Dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
+from datetime import datetime, timezone
 
 def _safe_parse_iso(dt: Any) -> Optional[datetime]:
-    if isinstance(dt, str):
-        try:
-            return datetime.fromisoformat(dt)
-        except Exception:
-            return None
-    return None
+    if not isinstance(dt, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(dt)
+        if parsed.tzinfo is not None:
+            return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        return parsed
+    except Exception:
+        return None
+
+
+# def _safe_parse_iso(dt: Any) -> Optional[datetime]:
+#     if isinstance(dt, str):
+#         try:
+#             return datetime.fromisoformat(dt)
+#         except Exception:
+#             return None
+#     return None
 
 
 # -----------------------------
