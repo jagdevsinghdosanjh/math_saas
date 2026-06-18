@@ -19,8 +19,8 @@ from student.public_content import render_public_content
 # QUIZ CHAPTERS (STATIC QUIZ SYSTEM)
 # ---------------------------------------------------------
 def render_quiz_chapters() -> None:
-    user = require_user()          # Validate Streamlit session only
-    sb = get_supabase()            # Create Supabase client AFTER validation
+    user = require_user()          # FIXED
+    sb = get_supabase()
 
     try:
         res = (
@@ -67,10 +67,10 @@ def run_student() -> None:
     app_container_style()
 
     # Validate login FIRST
-    user = require_user()
+    user = require_user()          # FIXED
     require_student()
 
-    # Create Supabase client AFTER login validation
+    # Create Supabase client AFTER validation
     sb = get_supabase()
 
     # Logout via query params
