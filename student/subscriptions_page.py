@@ -2,7 +2,6 @@ import streamlit as st
 from subscriptions.payment_callback import handle_payment_callback
 from subscriptions.core import create_subscription_order
 from student.dashboard import get_user_active_subscription
-from pages.razorpay_checkout import key_id,order_id,amount,user_id,components
 
 # ---------------------------------------------------------
 # MAIN ENTRY
