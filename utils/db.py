@@ -1,27 +1,36 @@
-import os
+import streamlit as st
 from supabase import create_client
 
-_supabase = None
-
 def get_supabase():
-    """Return a singleton Supabase client (service-role for admin panel)."""
+    url = st.secrets["supabase"]["url"]
+    key = st.secrets["supabase"]["anon_key"]
+    return create_client(url, key)
 
-    global _supabase
-    if _supabase is not None:
-        return _supabase
+# import os
+# import streamlit as st
+# from supabase import create_client
 
-    # Load secrets at runtime (cloud-safe)
-    url = os.getenv("SUPABASE_URL")
-    service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+# _supabase = None
 
-    if not url:
-        raise RuntimeError("SUPABASE_URL missing")
+# def get_supabase():
+#     """Return a singleton Supabase client (service-role for admin panel)."""
 
-    if not service_key:
-        raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY missing")
+#     global _supabase
+#     if _supabase is not None:
+#         return _supabase
 
-    _supabase = create_client(url, service_key)
-    return _supabase
+#     # Load secrets at runtime (cloud-safe)
+#     url = os.getenv("SUPABASE_URL")
+#     service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+#     if not url:
+#         raise RuntimeError("SUPABASE_URL missing")
+
+#     if not service_key:
+#         raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY missing")
+
+#     _supabase = create_client(url, service_key)
+#     return _supabase
 
 # from supabase import create_client
 # from math_saas.config import SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
