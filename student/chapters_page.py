@@ -137,7 +137,9 @@ def render_chapters_page(sb=None, user=None) -> None:
         .execute()
     )
 
-    profile = profile_res.data or {}
+    # profile = profile_res.data or {}
+    raw_profile = profile_res.data
+    profile: Dict[str, Any] = raw_profile if isinstance(raw_profile, dict) else {}
     grade = str(profile.get("grade") or "")
     board = str(profile.get("board") or "")
 
