@@ -1,58 +1,71 @@
 import streamlit as st
-from supabase import create_client
+from supabase import create_client, Client
 
+def get_supabase() -> Client:
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
 
-# ------------------------------------------------------------
-# CREATE CLIENT (ANON KEY ONLY)
-# ------------------------------------------------------------
-def _create_client():
-    url = st.secrets["supabase"]["url"]
-    key = st.secrets["supabase"]["anon_key"]   # MUST be anon key
-    return create_client(url, key)
+    sb = create_client(url, key)
 
-
-# ------------------------------------------------------------
-# RESTORE SESSION (CRITICAL)
-# ------------------------------------------------------------
-def restore_session(sb):
-    """
-    Restores Supabase session from Streamlit session_state.
-    This is what keeps the user logged in across refreshes.
-    """
-    session = st.session_state.get("session")
-    if session:
-        access_token = session.get("access_token")
-        if access_token:
-            sb.auth.set_session(access_token)
-
-
-# ------------------------------------------------------------
-# GET CLIENT WITH RESTORED SESSION
-# ------------------------------------------------------------
-def get_supabase():
-    """
-    Returns a Supabase client with restored session.
-    Use this everywhere in the app.
-    """
-    sb = _create_client()
-    restore_session(sb)
+    # DO NOT restore session here.
+    # Session restore is handled ONLY in auth.py
     return sb
 
+# import streamlit as st
+# from supabase import create_client
 
-# ------------------------------------------------------------
-# REQUIRE AUTHENTICATED USER
-# ------------------------------------------------------------
-def require_user(sb=None):
-    """
-    Ensures the user is logged in.
-    If not, stops the page.
-    """
-    if sb is None:
-        sb = get_supabase()
 
-    user = sb.auth.get_user()
-    if not user:
-        st.error("You are not logged in.")
-        st.stop()
+# # ------------------------------------------------------------
+# # CREATE CLIENT (ANON KEY ONLY)
+# # ------------------------------------------------------------
+# def _create_client():
+#     url = st.secrets["supabase"]["url"]
+#     key = st.secrets["supabase"]["anon_key"]   # MUST be anon key
+#     return create_client(url, key)
 
-    return user
+
+# # ------------------------------------------------------------
+# # RESTORE SESSION (CRITICAL)
+# # ------------------------------------------------------------
+# def restore_session(sb):
+#     """
+#     Restores Supabase session from Streamlit session_state.
+#     This is what keeps the user logged in across refreshes.
+#     """
+#     session = st.session_state.get("session")
+#     if session:
+#         access_token = session.get("access_token")
+#         if access_token:
+#             sb.auth.set_session(access_token)
+
+
+# # ------------------------------------------------------------
+# # GET CLIENT WITH RESTORED SESSION
+# # ------------------------------------------------------------
+# def get_supabase():
+#     """
+#     Returns a Supabase client with restored session.
+#     Use this everywhere in the app.
+#     """
+#     sb = _create_client()
+#     restore_session(sb)
+#     return sb
+
+
+# # ------------------------------------------------------------
+# # REQUIRE AUTHENTICATED USER
+# # ------------------------------------------------------------
+# def require_user(sb=None):
+#     """
+#     Ensures the user is logged in.
+#     If not, stops the page.
+#     """
+#     if sb is None:
+#         sb = get_supabase()
+
+#     user = sb.auth.get_user()
+#     if not user:
+#         st.error("You are not logged in.")
+#         st.stop()
+
+#     return user
