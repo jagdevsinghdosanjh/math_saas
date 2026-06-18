@@ -1,6 +1,6 @@
 import streamlit as st
 from typing import Any, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from utils.db import get_supabase
 from subscriptions.utils import plan_name
@@ -14,9 +14,8 @@ def _safe_get_dict(data: Any) -> Dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
-from datetime import datetime, timezone
-
 def _safe_parse_iso(dt: Any) -> Optional[datetime]:
+    """Parse ISO timestamps safely and normalize to UTC (naive)."""
     if not isinstance(dt, str):
         return None
     try:
@@ -27,19 +26,17 @@ def _safe_parse_iso(dt: Any) -> Optional[datetime]:
     except Exception:
         return None
 
-# def _safe_parse_iso(dt: Any) -> Optional[datetime]:
-#     if isinstance(dt, str):
-#         try:
-#             return datetime.fromisoformat(dt)
-#         except Exception:
-#             return None
-#     return None
-
 
 # -----------------------------
-# Subscription Fetcher (Corrected)
+# Subscription Fetcher (FINAL)
 # -----------------------------
 def get_user_active_subscription(user_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Returns the latest valid active subscription.
+    Matches webhook logic:
+    - status = active
+    - expires_at must be in the future
+    """
     sb = get_supabase()
 
     res = (
@@ -58,9 +55,8 @@ def get_user_active_subscription(user_id: str) -> Optional[Dict[str, Any]]:
 
     sub = _safe_get_dict(rows[0])
 
-    exp_raw = sub.get("expires_at")
-    exp_dt = _safe_parse_iso(exp_raw)
-
+    # Validate expiry
+    exp_dt = _safe_parse_iso(sub.get("expires_at"))
     if exp_dt is None:
         return None
 
