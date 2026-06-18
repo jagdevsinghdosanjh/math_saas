@@ -3,10 +3,7 @@ from typing import Any, Dict, List
 
 from utils.db import get_supabase
 from auth import TEXT_MUTED
-from student.dashboard import get_user_active_subscription   # NEW
-# from utils.subscription_guard import require_active_subscription
-
-# sub = require_active_subscription()
+from student.dashboard import get_user_active_subscription
 
 
 # ---------------------------------------------------------
@@ -113,42 +110,61 @@ def render_chapter_card(
 
 
 # ---------------------------------------------------------
-# MAIN RENDER FUNCTION
+# MAIN RENDER FUNCTION (FINAL, CLEAN)
 # ---------------------------------------------------------
-def render_chapters_page() -> None:
+def render_chapters_page(sb=None, user=None) -> None:
     st.markdown("<h3>Chapters</h3>", unsafe_allow_html=True)
 
-    student = st.session_state.get("student")
-    if not isinstance(student, dict):
-        st.error("Please login as student.")
+    # Restore Supabase session
+    if sb is None:
+        sb = get_supabase()
+
+    res = sb.auth.get_user()
+    user = res.user if res else None
+
+    if not user:
+        st.error("You are not logged in.")
+        st.stop()
+
+    user_id = user.id
+
+    # Fetch grade + board
+    profile_res = (
+        sb.table("profiles")
+        .select("grade, board")
+        .eq("id", user_id)
+        .single()
+        .execute()
+    )
+
+    profile = profile_res.data or {}
+    grade = str(profile.get("grade") or "")
+    board = str(profile.get("board") or "")
+
+    if not grade or not board:
+        st.error("Your profile is incomplete. Please update grade/board.")
         return
 
-    user_id = str(student.get("id") or "")
-    grade = str(student.get("grade") or "")
-    board = str(student.get("board") or "")
-
-    if not user_id or not grade or not board:
-        st.error("Invalid student session.")
-        return
-
-    # NEW — uses your refactored subscription fetcher
+    # Subscription check
     active_sub = get_user_active_subscription(user_id)
     has_premium = active_sub is not None
 
+    # Fetch chapters + progress
     chapters = fetch_chapters(grade, board)
     progress_map = fetch_progress(user_id)
 
+    if not isinstance(progress_map, dict):
+        progress_map = {}
+
     if not chapters:
         st.info("No chapters available for your grade/board.")
-        return
-
+        return 
+    
+    # Render chapter cards
     for chapter in chapters:
         cid = str(chapter.get("id", ""))
         chapter_key = str(chapter.get("chapter_key", ""))
-
         premium = chapter_key.lower().startswith("p_")
         locked = premium and not has_premium
-
         progress = safe_float(progress_map.get(cid, 0))
-
         render_chapter_card(chapter, progress, locked)

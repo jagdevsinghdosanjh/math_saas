@@ -2,7 +2,7 @@ import streamlit as st
 from typing import Any, Dict, Optional
 from datetime import datetime, timezone
 
-from utils.db import get_supabase
+from utils.db import get_supabase, require_user
 from subscriptions.utils import plan_name
 from auth import TEXT_MUTED, ACCENT
 
@@ -120,9 +120,7 @@ def render_quick_links():
     )
 
 
-def render_welcome_card(student: Dict[str, Any]):
-    name = str(student.get("full_name") or student.get("name") or "Student")
-
+def render_welcome_card(name: str):
     st.markdown(
         f"""
         <div class="neon-card" style="margin-top:16px;">
@@ -137,17 +135,25 @@ def render_welcome_card(student: Dict[str, Any]):
 
 
 # -----------------------------
-# Main Dashboard Renderer
+# Main Dashboard Renderer (PATCHED)
 # -----------------------------
-def render_dashboard():
-    student = st.session_state.get("student")
+def render_dashboard(sb=None, user=None):
+    # Restore Supabase session
+    if sb is None:
+        sb = get_supabase()
 
-    if not isinstance(student, dict):
-        st.error("Please login as student.")
-        return
+    # Require authenticated user
+    res = sb.auth.get_user()
+    user = res.user if res else None
 
-    user_id = str(student.get("id", ""))
+    if not user:
+        st.error("You are not logged in.")
+        st.stop()
 
+    user_id = user.id
+    name = user.user_metadata.get("full_name") or user.email or "Student"
+
+    # Header
     st.markdown(
         """
         <h3 style="margin-top:0;">Your Dashboard</h3>
@@ -158,6 +164,7 @@ def render_dashboard():
         unsafe_allow_html=True,
     )
 
+    # Layout
     col1, col2 = st.columns(2)
 
     with col1:
@@ -167,4 +174,4 @@ def render_dashboard():
     with col2:
         render_quick_links()
 
-    render_welcome_card(student)
+    render_welcome_card(name)
