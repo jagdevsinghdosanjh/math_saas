@@ -1,6 +1,7 @@
 import streamlit as st
 import re
 from typing import Any, Dict, List, cast
+
 from utils.db import get_supabase
 
 TEXT_MUTED = "#a0a6b1"
@@ -80,7 +81,12 @@ def clean_math(text: Any) -> str:
 # ------------------------------------------------------------
 def render_public_content() -> None:
     sb = get_supabase()
-    res = sb.table("public_content").select("*").order("created_at", desc=True).execute()
+    res = (
+        sb.table("public_content")
+        .select("*")
+        .order("created_at", desc=True)
+        .execute()
+    )
     raw_items = getattr(res, "data", []) or []
 
     items: List[Dict[str, Any]] = [
@@ -126,12 +132,14 @@ def apply_light_theme() -> None:
 # ------------------------------------------------------------
 def top_bar(title: str, role: str, logout_param: str) -> None:
     """
-    Uses unified session model: session_state["user"], session_state["role"]
+    Uses unified session model: session_state["user"], session_state["role"].
     Falls back to old per-role keys if needed.
     """
     user: Dict[str, Any] = {}
 
-    if st.session_state.get("role") == role and isinstance(st.session_state.get("user"), dict):
+    if st.session_state.get("role") == role and isinstance(
+        st.session_state.get("user"), dict
+    ):
         user = st.session_state["user"]
     else:
         maybe_user = st.session_state.get(role, {})
@@ -162,30 +170,57 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
 def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     """
     Secure login: session-only, no URL tokens.
+    Clears previous UI state but keeps Supabase session in st.session_state["session"]
+    (set in app.py) so restore_session can reattach.
     """
+    # Preserve Supabase session object if present
+    supabase_session = st.session_state.get("session")
+
     st.session_state.clear()
+
+    if supabase_session is not None:
+        st.session_state["session"] = supabase_session
+
     st.session_state["user"] = user
     st.session_state["role"] = role
     st.session_state["jwt"] = jwt
 
-    # backward compatibility
+    # backward compatibility per-role key
     st.session_state[role] = user
 
 
 def restore_session() -> None:
     """
-    No auto-login from URL. Only use session_state.
+    Restore Supabase auth session from st.session_state["session"] on rerun.
+    This keeps sb.auth.get_user() working for student/admin pages.
     """
-    return
+    session = st.session_state.get("session")
+    if not session:
+        return
+
+    sb = get_supabase()
+    access_token = getattr(session, "access_token", None)
+    refresh_token = getattr(session, "refresh_token", None)
+
+    if not access_token or not refresh_token:
+        return
+
+    try:
+        sb.auth.set_session(access_token, refresh_token)
+    except Exception:
+        # If restore fails, we silently continue; UI will treat user as logged out.
+        return
 
 
 # ------------------------------------------------------------
 # LOGOUT
 # ------------------------------------------------------------
 def logout() -> None:
-    for key in ["user", "role", "jwt", "student", "admin", "login_mode"]:
+    # Clear UI/session state
+    for key in ["user", "role", "jwt", "student", "admin", "login_mode", "session"]:
         st.session_state.pop(key, None)
 
+    # Clear URL params and rerun
     st.query_params.clear()
     st.rerun()
 

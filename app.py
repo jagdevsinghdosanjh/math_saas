@@ -9,9 +9,7 @@ from auth import (
     set_logged_in_user,
 )
 from admin.admin_app import run_admin
-    # Admin portal
 from student.student_app import run_student
-    # Student portal
 from student.public_content import render_public_content
 from student.signup_page import render_signup_page
 from utils.db import get_supabase
@@ -59,7 +57,6 @@ def handle_login(email: str, password: str, role: str):
         st.error("Students must login from Student Login.")
         return None, None
 
-    # Return profile + FULL session (not just JWT)
     return profile_raw, session
 
 
@@ -68,16 +65,13 @@ def handle_login(email: str, password: str, role: str):
 # -------------------------------------------------
 def admin_login_form():
     st.markdown("<h3>Admin Login</h3>", unsafe_allow_html=True)
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
+    email = st.text_input("Email", key="admin_email")
+    password = st.text_input("Password", type="password", key="admin_pass")
 
     if st.button("Login as Admin"):
         profile, session = handle_login(email, password, "admin")
         if profile and session:
-            # Store Supabase session for persistence
             st.session_state["session"] = session
-
-            # Store UI session
             set_logged_in_user(profile, "admin", session.access_token)
             st.rerun()
 
@@ -87,16 +81,13 @@ def admin_login_form():
 # -------------------------------------------------
 def student_login_form():
     st.markdown("<h3>Student Login</h3>", unsafe_allow_html=True)
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
+    email = st.text_input("Email", key="student_email")
+    password = st.text_input("Password", type="password", key="student_pass")
 
     if st.button("Login as Student"):
         profile, session = handle_login(email, password, "student")
         if profile and session:
-            # Store Supabase session for persistence
             st.session_state["session"] = session
-
-            # Store UI session
             set_logged_in_user(profile, "student", session.access_token)
             st.rerun()
 
