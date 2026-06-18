@@ -11,7 +11,7 @@ from auth import TEXT_MUTED
 # -------------------------------------------------
 # MAIN PAGE
 # -------------------------------------------------
-def render_subscription_page() -> None:
+def render_subscriptions_page() -> None:
     st.header("Subscription")
 
     student = st.session_state.get("student")
