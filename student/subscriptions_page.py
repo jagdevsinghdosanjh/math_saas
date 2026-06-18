@@ -6,13 +6,15 @@ from utils.razorpay import get_razorpay_keys
 from student.dashboard import get_user_active_subscription
 from subscriptions.utils import format_inr, plan_name
 from auth import TEXT_MUTED
-
+from utils.db import get_supabase
 
 # -------------------------------------------------
 # MAIN PAGE
 # -------------------------------------------------
 def render_subscriptions_page() -> None:
     st.header("Subscription")
+    sb = get_supabase()
+    st.write("Auth user:", sb.auth.get_user())
 
     student = st.session_state.get("student")
     if not isinstance(student, dict):
