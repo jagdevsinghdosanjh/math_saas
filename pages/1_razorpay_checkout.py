@@ -1,153 +1,170 @@
 import streamlit as st
-from typing import Any, Dict
 import streamlit.components.v1 as components
+from typing import Any, Dict, Optional
 
 from utils.db import get_supabase
 from utils.razorpay import get_razorpay_client, get_razorpay_keys
-from subscriptions.utils import format_inr, plan_name
+from subscriptions.utils import plan_name, format_inr  # format_inr kept for future UI use
 
 
+# ---------------------------------------------------------
+# SAFE HELPERS
+# ---------------------------------------------------------
+def safe_dict(value: Any) -> Optional[Dict[str, Any]]:
+    """Return value only if it's a dict, otherwise None."""
+    return value if isinstance(value, dict) else None
+
+
+def safe_int(value: Any) -> int:
+    """Convert JSON-like value to int safely."""
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str) and value.isdigit():
+        return int(value)
+    return 0
+
+
+def safe_str(value: Any) -> str:
+    """Convert JSON-like value to string safely."""
+    if isinstance(value, (str, int, float)):
+        return str(value)
+    return ""
+
+
+def safe_order_create(client: Any, payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Pylance-safe wrapper for Razorpay client.order.create()."""
+    try:
+        order = client.order.create(payload)  # type: ignore[attr-defined]
+        return order if isinstance(order, dict) else {}
+    except Exception:
+        return {}
+
+
+# ---------------------------------------------------------
+# MAIN CHECKOUT PAGE
+# ---------------------------------------------------------
 def render_razorpay_checkout() -> None:
-    st.header("Razorpay Checkout")
-
-    # ---------------------------------------------------------
-    # Restore Supabase session + require authenticated user
-    # ---------------------------------------------------------
     sb = get_supabase()
-    res = sb.auth.get_user()
-    user = res.user if res and res.user else None
+
+    # Require logged-in user
+    user_res = sb.auth.get_user()
+    user = user_res.user if user_res and getattr(user_res, "user", None) else None
 
     if not user:
         st.error("You are not logged in.")
         st.stop()
 
-    # ---------------------------------------------------------
-    # Razorpay client
-    # ---------------------------------------------------------
-    client = get_razorpay_client()
-    if client is None:
-        st.error("Razorpay keys not configured. Cannot start checkout.")
-        return
+    # Read query params safely
+    params: Any = st.query_params
+    sub_id = ""
 
-    # ---------------------------------------------------------
-    # Read query params
-    # ---------------------------------------------------------
-    params = st.query_params
-    sub_id = params.get("sub_id", [""])[0]
+    if isinstance(params, dict):
+        raw = params.get("sub_id")
+        if isinstance(raw, list):
+            sub_id = raw[0] if raw else ""
+        elif isinstance(raw, str):
+            sub_id = raw
 
     if not sub_id:
         st.error("Missing subscription ID.")
-        return
+        st.stop()
 
-    # ---------------------------------------------------------
     # Fetch subscription
-    # ---------------------------------------------------------
     res = (
         sb.table("subscriptions")
-        .select("id, user_id, amount, currency, plan, plan_code, status")
+        .select("*")
         .eq("id", sub_id)
         .single()
         .execute()
     )
 
-    sub = res.data or {}
-    if not isinstance(sub, Dict):
+    sub = safe_dict(res.data if res else None)
+    if not sub:
         st.error("Subscription not found.")
-        return
-
-    # ---------------------------------------------------------
-    # Authorization check
-    # ---------------------------------------------------------
-    if str(sub.get("user_id")) != user.id:
-        st.error("Unauthorized access to subscription.")
         st.stop()
 
-    # ---------------------------------------------------------
-    # Extract subscription details (Pylance-safe)
-    # ---------------------------------------------------------
-    raw_amount = sub.get("amount")
+    # Authorization check
+    if safe_str(sub.get("user_id")) != getattr(user, "id", ""):
+        st.error("Unauthorized access.")
+        st.stop()
 
-    if isinstance(raw_amount, (int, float)):
-        amount = int(raw_amount)
-    elif isinstance(raw_amount, str) and raw_amount.isdigit():
-        amount = int(raw_amount)
-    else:
-        amount = 0
-
-    currency = str(sub.get("currency") or "INR")
-    plan_code = str(sub.get("plan_code") or "")
+    # Extract fields safely
+    amount = safe_int(sub.get("amount"))
+    currency = safe_str(sub.get("currency")) or "INR"
+    plan_code = safe_str(sub.get("plan_code"))
     plan = plan_name(plan_code)
 
-    # ---------------------------------------------------------
+    # Razorpay client
+    client = get_razorpay_client()
+    if client is None:
+        st.error("Razorpay keys not configured.")
+        st.stop()
+
     # Create Razorpay order
-    # ---------------------------------------------------------
-    try:
-        order = client.order.create({  # type: ignore[attr-defined]
+    order = safe_order_create(
+        client,
+        {
             "amount": amount,
             "currency": currency,
             "payment_capture": 1,
             "notes": {
-                "subscription_id": str(sub_id),
-                "user_id": user.id,
+                "subscription_id": sub_id,
+                "user_id": getattr(user, "id", ""),
                 "plan_code": plan_code,
             },
-        })
-    except Exception as exc:
-        st.error(f"Failed to create Razorpay order. ({exc})")
-        return
+        },
+    )
 
-    order_id = str(order.get("id"))
+    order_id = safe_str(order.get("id"))
 
-    # ---------------------------------------------------------
-    # Save order_id in subscriptions
-    # ---------------------------------------------------------
-    sb.table("subscriptions").update({
-        "razorpay_order_id": order_id,
-    }).eq("id", sub_id).execute()
+    if not order_id:
+        st.error("Failed to create Razorpay order.")
+        st.stop()
 
-    # ---------------------------------------------------------
-    # UI
-    # ---------------------------------------------------------
-    st.markdown("### Complete Payment")
-    st.write(f"Plan: **{plan}**")
-    st.write(f"Amount: **{format_inr(amount)}**")
+    # Save order_id
+    sb.table("subscriptions").update(
+        {
+            "razorpay_order_id": order_id,
+        }
+    ).eq("id", sub_id).execute()
 
     key_id, _ = get_razorpay_keys()
 
-    # ---------------------------------------------------------
-    # Razorpay Checkout.js Embed (auto-open only once)
-    # ---------------------------------------------------------
-    checkout_html = f"""
+    # Render only the Razorpay script to avoid re-render issues
+    html = f"""
+    <html>
+    <body>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
     <script>
-        if (!window.rzp_opened) {{
-            window.rzp_opened = true;
-
-            var options = {{
-                "key": "{key_id}",
-                "amount": "{amount}",
-                "currency": "{currency}",
-                "name": "Math Hub",
-                "description": "{plan}",
-                "order_id": "{order_id}",
-
-                "handler": function (response) {{
-                    window.location.href =
-                        "?page=subscriptions&payment_id=" + response.razorpay_payment_id +
-                        "&order_id={order_id}" +
-                        "&signature=" + response.razorpay_signature;
-                }},
-
-                "theme": {{
-                    "color": "#00ff88"
-                }}
-            }};
-
-            var rzp = new Razorpay(options);
-            rzp.open();
-        }}
+        var options = {{
+            "key": "{key_id}",
+            "amount": "{amount}",
+            "currency": "{currency}",
+            "name": "Math Hub",
+            "description": "{plan}",
+            "order_id": "{order_id}",
+            "handler": function (response) {{
+                window.location.href =
+                    "?page=subscriptions"
+                    + "&payment_id=" + response.razorpay_payment_id
+                    + "&order_id={order_id}"
+                    + "&signature=" + response.razorpay_signature;
+            }},
+            "theme": {{
+                "color": "#00ff88"
+            }}
+        }};
+        var rzp = new Razorpay(options);
+        rzp.open();
     </script>
+    </body>
+    </html>
     """
 
-    components.html(checkout_html, height=700, scrolling=False)
+    components.html(html, height=10)
+
+
+# For Streamlit pages, just call the renderer at import time
+render_razorpay_checkout()
