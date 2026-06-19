@@ -1,13 +1,10 @@
 import streamlit as st
 from typing import Any, Dict, List
 
-from utils.db import get_supabase
+from utils.db import get_supabase, require_user
 from utils.formatter import fix_math_rendering
 from auth import TEXT_MUTED
 from student.dashboard import get_user_active_subscription
-# from utils.subscription_guard import require_active_subscription
-
-# sub = require_active_subscription()
 
 
 # ---------------------------------------------------------
@@ -20,7 +17,7 @@ def _fetch_public_content() -> List[Dict[str, Any]]:
         res = (
             sb.table("public_content")
             .select("id, title, body, category, is_premium, is_published, created_at")
-            .eq("is_published", True)               # RLS + published filter
+            .eq("is_published", True)
             .order("created_at", desc=True)
             .execute()
         )
@@ -34,9 +31,9 @@ def _fetch_public_content() -> List[Dict[str, Any]]:
 
 
 # ---------------------------------------------------------
-# MAIN RENDER FUNCTION (FINAL)
+# MAIN RENDER FUNCTION (UNIFIED AUTH + TYPE SAFE)
 # ---------------------------------------------------------
-def render_public_content():
+def render_public_content() -> None:
     st.markdown("<h3>Mathematical Concepts & Latest News</h3>", unsafe_allow_html=True)
 
     items = _fetch_public_content()
@@ -44,13 +41,13 @@ def render_public_content():
         st.info("No public content available.")
         return
 
-    # Student session
-    student = st.session_state.get("student")
-    user_id = student.get("id") if isinstance(student, dict) else None
+    # Unified login model
+    user_dict: Dict[str, Any] = require_user()
+    user_id: str = str(user_dict.get("id", ""))
 
     # Subscription check
-    sub = get_user_active_subscription(user_id) if user_id else None
-    has_access = sub is not None
+    active_sub = get_user_active_subscription(user_id)
+    has_access: bool = active_sub is not None
 
     # Render each content card
     for item in items:
@@ -58,8 +55,8 @@ def render_public_content():
         raw_body = str(item.get("body", ""))
         body = fix_math_rendering(raw_body)
 
-        premium = bool(item.get("is_premium", False))
-        category = item.get("category", "General")
+        premium: bool = bool(item.get("is_premium", False))
+        category: str = str(item.get("category", "General"))
 
         # -------------------------------
         # PREMIUM CONTENT (LOCKED)

@@ -1,34 +1,30 @@
-# math_saas/student/signup_page.py
-
 import streamlit as st
+from typing import Any, Dict
+
 from utils.db import get_supabase
 
 
+# ---------------------------------------------------------
+# SIGNUP PAGE (FINAL, TYPE-SAFE, UNIFIED-AUTH COMPATIBLE)
+# ---------------------------------------------------------
 def render_signup_page() -> None:
     st.header("Create Student Account")
 
-    full_name = st.text_input("Full Name")
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    grade = st.selectbox("Grade", ["9", "10"])
-    board = st.selectbox("Board", ["CBSE", "ICSE", "STATE"])
+    full_name: str = st.text_input("Full Name")
+    email: str = st.text_input("Email")
+    password: str = st.text_input("Password", type="password")
+    grade: str = st.selectbox("Grade", ["9", "10"])
+    board: str = st.selectbox("Board", ["CBSE", "ICSE", "STATE"])
 
     if st.button("Create Account"):
+        # ---------------------------------------------------------
+        # BASIC VALIDATION
+        # ---------------------------------------------------------
+        if not full_name or not email or not password:
+            st.error("All fields are required.")
+            return
+
         sb = get_supabase()
-
-        # ---------------------------------------------------------
-        # STEP 0 — CHECK IF EMAIL ALREADY EXISTS
-        # ---------------------------------------------------------
-        try:
-            res = sb.auth.admin.list_users()
-            users = getattr(res, "users", [])
-
-            for u in users:
-                if isinstance(u, dict) and u.get("email") == email:
-                    st.error("Email already registered. Please log in instead.")
-                    return
-        except Exception:
-            pass  # admin API may be restricted
 
         # ---------------------------------------------------------
         # STEP 1 — CREATE AUTH USER
@@ -44,7 +40,7 @@ def render_signup_page() -> None:
             st.error("Signup failed.")
             return
 
-        user_id = str(user.id)
+        user_id: str = str(user.id)
 
         # ---------------------------------------------------------
         # STEP 2 — CHECK IF PROFILE ALREADY EXISTS
@@ -83,7 +79,7 @@ def render_signup_page() -> None:
                 return
 
         # ---------------------------------------------------------
-        # STEP 4 — CREATE FREE SUBSCRIPTION (DIRECT DB INSERT)
+        # STEP 4 — CREATE FREE SUBSCRIPTION (SAFE)
         # ---------------------------------------------------------
         try:
             existing_sub = (

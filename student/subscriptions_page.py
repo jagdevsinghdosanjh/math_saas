@@ -1,5 +1,5 @@
 import streamlit as st
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from utils.db import get_supabase, require_user
 from utils.razorpay import get_razorpay_keys
@@ -9,29 +9,31 @@ from auth import TEXT_MUTED
 
 
 # -------------------------------------------------
-# MAIN PAGE
+# MAIN PAGE (UNIFIED AUTH + TYPE SAFE)
 # -------------------------------------------------
 def render_subscriptions_page() -> None:
     st.header("Subscription")
 
+    # Unified login model
+    user_dict: Dict[str, Any] = require_user()
+
+    user_id: str = str(user_dict.get("id", ""))
+    if not user_id:
+        st.error("Invalid student session.")
+        return
+
+    # Supabase client
     sb = get_supabase()
-
-    # Correct Supabase user extraction
-    res = sb.auth.get_user()
-    user = res.user if res else None
-    if not user:
-        st.error("You are not logged in.")
-        st.stop()
-
-    user_id = user.id
-    st.write("Auth user:", user)  # Debug: should NOT be None now
 
     # -------------------------------------------------
     # Razorpay keys
     # -------------------------------------------------
     key_id, key_secret = get_razorpay_keys()
     if not key_id or not key_secret:
-        st.info("Subscription page coming soon. (Razorpay keys not configured in environment.)")
+        st.info(
+            "Subscription page coming soon. "
+            "(Razorpay keys not configured in environment.)"
+        )
         return
 
     # -------------------------------------------------
@@ -81,27 +83,25 @@ def render_subscriptions_page() -> None:
 
 
 # -------------------------------------------------
-# CHECKOUT STARTER
+# CHECKOUT STARTER (RLS SAFE)
 # -------------------------------------------------
 def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None:
-
-    # -------------------------------------------------
-    # INSERT pending subscription (RLS SAFE)
-    # -------------------------------------------------
     try:
         res = (
             sb.table("subscriptions")
-            .insert({
-                "user_id": user_id,   # MUST MATCH auth.uid()
-                "plan": "Monthly" if plan_code == "MTH99" else "Yearly",
-                "plan_code": plan_code,
-                "status": "pending",
-                "amount": amount_paise,
-                "currency": "INR",
-                "started_at": None,
-                "expires_at": None,
-                "razorpay_order_id": None
-            })
+            .insert(
+                {
+                    "user_id": user_id,
+                    "plan": "Monthly" if plan_code == "MTH99" else "Yearly",
+                    "plan_code": plan_code,
+                    "status": "pending",
+                    "amount": amount_paise,
+                    "currency": "INR",
+                    "started_at": None,
+                    "expires_at": None,
+                    "razorpay_order_id": None,
+                }
+            )
             .execute()
         )
     except Exception as exc:
@@ -117,9 +117,7 @@ def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None
 
     sub_id = sub["id"]
 
-    # -------------------------------------------------
     # Redirect to Razorpay checkout page
-    # -------------------------------------------------
     st.query_params = {
         "page": "razorpay_checkout",
         "sub_id": str(sub_id),
