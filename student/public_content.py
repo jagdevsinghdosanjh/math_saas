@@ -1,7 +1,7 @@
 import streamlit as st
 from typing import Any, Dict, List
 
-from utils.db import get_supabase, require_user
+from utils.db import get_supabase
 from utils.formatter import fix_math_rendering
 from auth import TEXT_MUTED
 from student.dashboard import get_user_active_subscription
@@ -31,7 +31,7 @@ def _fetch_public_content() -> List[Dict[str, Any]]:
 
 
 # ---------------------------------------------------------
-# MAIN RENDER FUNCTION (UNIFIED AUTH + TYPE SAFE)
+# MAIN RENDER FUNCTION (PUBLIC‑SAFE + TYPE SAFE)
 # ---------------------------------------------------------
 def render_public_content() -> None:
     st.markdown("<h3>Mathematical Concepts & Latest News</h3>", unsafe_allow_html=True)
@@ -41,15 +41,19 @@ def render_public_content() -> None:
         st.info("No public content available.")
         return
 
-    # Unified login model
-    user_dict: Dict[str, Any] = require_user()
-    user_id: str = str(user_dict.get("id", ""))
+    # ---------------------------------------------------------
+    # LOGIN OPTIONAL — homepage must NOT force login
+    # ---------------------------------------------------------
+    user = st.session_state.get("user")
+    user_id = str(user.get("id")) if isinstance(user, dict) else None
 
-    # Subscription check
-    active_sub = get_user_active_subscription(user_id)
+    # Subscription check only if logged in
+    active_sub = get_user_active_subscription(user_id) if user_id else None
     has_access: bool = active_sub is not None
 
-    # Render each content card
+    # ---------------------------------------------------------
+    # RENDER CONTENT CARDS
+    # ---------------------------------------------------------
     for item in items:
         title = str(item.get("title", "Untitled"))
         raw_body = str(item.get("body", ""))
