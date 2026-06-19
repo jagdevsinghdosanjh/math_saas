@@ -82,7 +82,6 @@ def render_razorpay_checkout() -> None:
         .single()
         .execute()
     )
-
     st.write("DEBUG: subscription fetch response =", res)
 
     sub = safe_dict(res.data if res else None)
