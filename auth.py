@@ -169,23 +169,34 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
 # ------------------------------------------------------------
 def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     """
-    Secure login: session-only, no URL tokens.
-    Preserve Supabase session object.
+    Unified login handler.
+    - Does NOT clear session_state (prevents wiping student/admin keys)
+    - Preserves Supabase session object
+    - Sets both 'user' and role-specific key ('student' or 'admin')
     """
+
+    # Preserve Supabase session if present
     supabase_session = st.session_state.get("session")
 
-    st.session_state.clear()
+    # Reset only auth-related keys, not the entire session
+    for key in ["user", "student", "admin", "role", "jwt"]:
+        if key in st.session_state:
+            del st.session_state[key]
 
-    # Restore Supabase session object
+    # Restore Supabase session
     if supabase_session is not None:
         st.session_state["session"] = supabase_session
 
+    # Unified session model
     st.session_state["user"] = user
     st.session_state["role"] = role
     st.session_state["jwt"] = jwt
 
-    # backward compatibility
-    st.session_state[role] = user
+    # Role-specific compatibility
+    if role == "student":
+        st.session_state["student"] = user
+    elif role == "admin":
+        st.session_state["admin"] = user
 
 def restore_session() -> None:
     session = st.session_state.get("session")
