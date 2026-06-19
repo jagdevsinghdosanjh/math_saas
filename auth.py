@@ -203,7 +203,7 @@ def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     elif role == "admin":
         st.session_state["admin"] = user
 
-def restore_session() -> None:
+def restore_session():
     session = st.session_state.get("session")
     auth_state = st.session_state.get("auth_state")
 
@@ -217,15 +217,14 @@ def restore_session() -> None:
 
     # Restore app login state
     if auth_state:
-        st.session_state["user"] = auth_state.get("user")
-        st.session_state["role"] = auth_state.get("role")
-        st.session_state["jwt"] = auth_state.get("jwt")
+        st.session_state["user"] = auth_state["user"]
+        st.session_state["role"] = auth_state["role"]
+        st.session_state["jwt"] = auth_state["jwt"]
 
-        # Role-specific compatibility
-        if auth_state.get("role") == "student":
-            st.session_state["student"] = auth_state.get("user")
-        elif auth_state.get("role") == "admin":
-            st.session_state["admin"] = auth_state.get("user")
+        if auth_state["role"] == "student":
+            st.session_state["student"] = auth_state["user"]
+        elif auth_state["role"] == "admin":
+            st.session_state["admin"] = auth_state["user"]
 
 
 # def restore_session() -> None:
