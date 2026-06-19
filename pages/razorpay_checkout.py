@@ -57,11 +57,20 @@ def render_razorpay_checkout() -> None:
     # ---------------------------------------------------------
     # READ SUBSCRIPTION ID FROM SESSION STATE
     # ---------------------------------------------------------
-    sub_id = st.session_state.get("sub_id", "")
-    st.write("DEBUG: Received sub_id =", sub_id)
-    if not sub_id:
-        st.error("Missing subscription ID.")
-        st.stop()
+    # READ SUBSCRIPTION ID
+sub_id = st.session_state.get("sub_id", "")
+
+if not sub_id:
+    params = st.query_params
+    sub_id = params.get("sub_id", [""])[0]
+
+st.write("DEBUG: final sub_id used in checkout =", sub_id)
+
+if not sub_id:
+    st.error("Missing subscription ID.")
+    st.write("DEBUG: Missing sub_id, stopping checkout")
+    st.stop()
+
 
     # ---------------------------------------------------------
     # FETCH SUBSCRIPTION
