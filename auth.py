@@ -1,9 +1,6 @@
-# auth.py
-
+import streamlit as st
 import re
 from typing import Any, Dict, List, cast
-
-import streamlit as st
 from utils.db import get_supabase
 
 TEXT_MUTED = "#a0a6b1"
@@ -31,27 +28,9 @@ def app_container_style() -> None:
             border: 1px solid rgba(0,255,136,0.25);
             box-shadow: 0 0 22px rgba(0,255,136,0.18);
         }
-        .neon-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0 28px rgba(0,255,136,0.35);
-        }
         h1, h2, h3, h4 {
             color: #00ff88;
             font-weight: 600;
-        }
-        p {
-            color: #b5b8c2;
-        }
-        .stButton>button {
-            background: linear-gradient(135deg, #00ff88, #00cc6a);
-            color: black;
-            border-radius: 8px;
-            padding: 8px 18px;
-            border: none;
-            font-weight: 600;
-        }
-        .stButton>button:hover {
-            background: linear-gradient(135deg, #00ffaa, #00dd77);
         }
         </style>
         """,
@@ -73,21 +52,13 @@ def clean_math(text: Any) -> str:
     if not isinstance(text, str):
         return ""
     text = text.replace("\\\\(", "\\(").replace("\\\\)", "\\)")
-    text = text.replace("\\\
-
-\[", "\
-
-\[").replace("\\\\]
-
-", "\\]
-
-")
+    text = text.replace("\\\\[", "\\[").replace("\\\\]", "\\]")
     text = text.replace("\\\\frac", "\\frac")
     return re.sub(r"\$\s*\$", "$$", text)
 
 
 # ------------------------------------------------------------
-# PUBLIC CONTENT (HOME PAGE)
+# PUBLIC CONTENT
 # ------------------------------------------------------------
 def render_public_content() -> None:
     sb = get_supabase()
@@ -121,18 +92,14 @@ def render_public_content() -> None:
 # ------------------------------------------------------------
 def apply_dark_theme() -> None:
     st.markdown(
-        """
-        <style>.main { background: #050608; color: #f8f9fa; }</style>
-        """,
+        "<style>.main { background: #050608; color: #f8f9fa; }</style>",
         unsafe_allow_html=True,
     )
 
 
 def apply_light_theme() -> None:
     st.markdown(
-        """
-        <style>.main { background: #ffffff; color: #111827; }</style>
-        """,
+        "<style>.main { background: #ffffff; color: #111827; }</style>",
         unsafe_allow_html=True,
     )
 
@@ -141,21 +108,7 @@ def apply_light_theme() -> None:
 # TOP BAR
 # ------------------------------------------------------------
 def top_bar(title: str, role: str, logout_param: str) -> None:
-    """
-    Uses unified session model: session_state["user"], session_state["role"].
-    Falls back to old per-role keys if needed.
-    """
-    user: Dict[str, Any] = {}
-
-    if st.session_state.get("role") == role and isinstance(
-        st.session_state.get("user"), dict
-    ):
-        user = st.session_state["user"]
-    else:
-        maybe_user = st.session_state.get(role, {})
-        if isinstance(maybe_user, dict):
-            user = maybe_user
-
+    user = st.session_state.get("user", {})
     display_name = (
         user.get("full_name")
         or user.get("name")
@@ -178,40 +131,37 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
 
 
 # ------------------------------------------------------------
-# AUTH PERSISTENCE (SAFE)
+# AUTH PERSISTENCE
 # ------------------------------------------------------------
 def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     """
-    Unified login handler.
-    - Does NOT clear session_state
-    - Preserves Supabase session object
-    - Stores persistent auth_state for reruns
+    Stores persistent login state + Supabase session.
     """
 
-    # 1. Persist logical auth state (for restore_session)
+    # Persist logical auth state
     st.session_state["auth_state"] = {
         "user": user,
         "role": role,
         "jwt": jwt,
     }
 
-    # 2. Preserve Supabase session if present
+    # Preserve Supabase session
     supabase_session = st.session_state.get("session")
 
-    # 3. Reset only auth-related keys (do NOT clear whole session)
+    # Reset only auth keys
     for key in ["user", "student", "admin", "role", "jwt"]:
         st.session_state.pop(key, None)
 
-    # 4. Restore Supabase session
+    # Restore Supabase session
     if supabase_session is not None:
         st.session_state["session"] = supabase_session
 
-    # 5. Unified session model
+    # Restore unified login model
     st.session_state["user"] = user
     st.session_state["role"] = role
     st.session_state["jwt"] = jwt
 
-    # 6. Role-specific compatibility
+    # Role-specific
     if role == "student":
         st.session_state["student"] = user
     elif role == "admin":
@@ -219,9 +169,6 @@ def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
 
 
 def restore_session() -> None:
-    """
-    Restore Supabase session + logical auth state on every rerun.
-    """
     session = st.session_state.get("session")
     auth_state = st.session_state.get("auth_state")
 
@@ -234,27 +181,21 @@ def restore_session() -> None:
             sb.auth.set_session(access_token, refresh_token)
 
     # Restore app login state
-    if auth_state and isinstance(auth_state, dict):
-        user = auth_state.get("user")
-        role = auth_state.get("role")
-        jwt = auth_state.get("jwt")
+    if auth_state:
+        st.session_state["user"] = auth_state["user"]
+        st.session_state["role"] = auth_state["role"]
+        st.session_state["jwt"] = auth_state["jwt"]
 
-        if isinstance(user, dict) and isinstance(role, str):
-            st.session_state["user"] = user
-            st.session_state["role"] = role
-            st.session_state["jwt"] = jwt
-
-            if role == "student":
-                st.session_state["student"] = user
-            elif role == "admin":
-                st.session_state["admin"] = user
+        if auth_state["role"] == "student":
+            st.session_state["student"] = auth_state["user"]
+        elif auth_state["role"] == "admin":
+            st.session_state["admin"] = auth_state["user"]
 
 
 # ------------------------------------------------------------
 # LOGOUT
 # ------------------------------------------------------------
 def logout() -> None:
-    # Clear UI/session state
     for key in [
         "user",
         "role",
@@ -267,7 +208,6 @@ def logout() -> None:
     ]:
         st.session_state.pop(key, None)
 
-    # Clear URL params and rerun
     st.query_params.clear()
     st.rerun()
 
@@ -279,7 +219,6 @@ def require_admin() -> None:
     if st.session_state.get("role") != "admin":
         st.error("Please login as admin.")
         st.stop()
-
 
 def require_student() -> None:
     if st.session_state.get("role") != "student":

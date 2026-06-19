@@ -88,34 +88,16 @@ def student_login_form():
         profile, session = handle_login(email, password, "student")
         if profile and session:
             st.session_state["session"] = session
-
-            # REQUIRED FIX
-            st.session_state["student"] = profile
-            st.session_state["user"] = profile   # <-- THIS LINE FIXES EVERYTHING
-
             set_logged_in_user(profile, "student", session.access_token)
             st.rerun()
-# def student_login_form():
-#     st.markdown("<h3>Student Login</h3>", unsafe_allow_html=True)
-#     email = st.text_input("Email", key="student_email")
-#     password = st.text_input("Password", type="password", key="student_pass")
-
-#     if st.button("Login as Student"):
-#         profile, session = handle_login(email, password, "student")
-#         if profile and session:
-#             st.session_state["session"] = session
-#             set_logged_in_user(profile, "student", session.access_token)
-#             st.rerun()
 
 
 # -------------------------------------------------
 # MAIN ROUTER
 # -------------------------------------------------
 def main():
-    # Restore Supabase session (if exists)
     restore_session()
 
-    # Theme
     theme_choice = st.radio(
         "Choose Theme:",
         ["Dark (Neon)", "Light"],
@@ -127,9 +109,6 @@ def main():
     else:
         apply_dark_theme()
 
-    # -----------------------------
-    # AUTH ROUTING
-    # -----------------------------
     role = st.session_state.get("role")
 
     if role == "admin":
@@ -140,9 +119,6 @@ def main():
         run_student()
         return
 
-    # -----------------------------
-    # LOGIN GATEWAY
-    # -----------------------------
     st.markdown("<h2>Welcome to Student's Math Companion</h2>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
