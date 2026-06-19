@@ -174,6 +174,11 @@ def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     - Preserves Supabase session object
     - Sets both 'user' and role-specific key ('student' or 'admin')
     """
+    st.session_state["auth_state"] = {
+    "user": user,
+    "role": role,
+    "jwt": jwt,
+}
 
     # Preserve Supabase session if present
     supabase_session = st.session_state.get("session")
@@ -200,15 +205,40 @@ def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
 
 def restore_session() -> None:
     session = st.session_state.get("session")
-    if not session:
-        return
+    auth_state = st.session_state.get("auth_state")
 
-    sb = get_supabase()
-    access_token = getattr(session, "access_token", None)
-    refresh_token = getattr(session, "refresh_token", None)
+    # Restore Supabase session
+    if session:
+        sb = get_supabase()
+        access_token = getattr(session, "access_token", None)
+        refresh_token = getattr(session, "refresh_token", None)
+        if access_token and refresh_token:
+            sb.auth.set_session(access_token, refresh_token)
 
-    if access_token and refresh_token:
-        sb.auth.set_session(access_token, refresh_token)
+    # Restore app login state
+    if auth_state:
+        st.session_state["user"] = auth_state.get("user")
+        st.session_state["role"] = auth_state.get("role")
+        st.session_state["jwt"] = auth_state.get("jwt")
+
+        # Role-specific compatibility
+        if auth_state.get("role") == "student":
+            st.session_state["student"] = auth_state.get("user")
+        elif auth_state.get("role") == "admin":
+            st.session_state["admin"] = auth_state.get("user")
+
+
+# def restore_session() -> None:
+#     session = st.session_state.get("session")
+#     if not session:
+#         return
+
+#     sb = get_supabase()
+#     access_token = getattr(session, "access_token", None)
+#     refresh_token = getattr(session, "refresh_token", None)
+
+#     if access_token and refresh_token:
+#         sb.auth.set_session(access_token, refresh_token)
 
 # ------------------------------------------------------------
 # LOGOUT
