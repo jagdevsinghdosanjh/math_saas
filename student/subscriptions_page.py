@@ -9,54 +9,55 @@ from subscriptions.utils import plan_name, format_inr
 
 
 # ---------------------------------------------------------
+# SAFE HELPERS
+# ---------------------------------------------------------
+def _safe_dict(value: Any) -> Optional[Dict[str, Any]]:
+    return value if isinstance(value, dict) else None
+
+
+# ---------------------------------------------------------
 # PAYMENT SUCCESS HANDLER
 # ---------------------------------------------------------
 def handle_payment_success() -> None:
-    """
-    Handles Razorpay redirect:
-    ?page=subscriptions&payment_id=xxx&order_id=xxx&signature=xxx
-    """
-
     params = st.query_params
 
-    payment_id = params.get("payment_id", [""])[0]
-    order_id = params.get("order_id", [""])[0]
-    signature = params.get("signature", [""])[0]
+    payment_id_list = params.get("payment_id", [""])
+    order_id_list = params.get("order_id", [""])
+    signature_list = params.get("signature", [""])
+
+    payment_id = payment_id_list[0] if payment_id_list else ""
+    order_id = order_id_list[0] if order_id_list else ""
+    signature = signature_list[0] if signature_list else ""
 
     if not payment_id or not order_id or not signature:
         st.info("No payment information found.")
         return
 
-    # ---------------------------------------------------------
-    # Verify Razorpay signature
-    # ---------------------------------------------------------
     from utils.razorpay import get_razorpay_keys
-    key_id, key_secret = get_razorpay_keys()
+    _, key_secret = get_razorpay_keys()
 
     generated_signature = hmac.new(
         key_secret.encode(),
         f"{order_id}|{payment_id}".encode(),
-        hashlib.sha256
+        hashlib.sha256,
     ).hexdigest()
 
     if generated_signature != signature:
         st.error("Payment verification failed. Signature mismatch.")
         return
 
-    # ---------------------------------------------------------
-    # Fetch subscription by order_id
-    # ---------------------------------------------------------
     sb = get_supabase()
-
     res = (
         sb.table("subscriptions")
         .select("*")
         .eq("razorpay_order_id", order_id)
-        .single()
+        .maybe_single()
         .execute()
     )
 
-    sub: Optional[Dict[str, Any]] = res.data if isinstance(res.data, dict) else None
+    data = res.data if res is not None else None
+    sub = _safe_dict(data)
+
     if not sub:
         st.error("Subscription not found for this payment.")
         return
@@ -64,34 +65,20 @@ def handle_payment_success() -> None:
     sub_id = sub.get("id")
     plan_code = sub.get("plan_code", "")
 
-    # ---------------------------------------------------------
-    # Compute subscription duration
-    # ---------------------------------------------------------
-    if plan_code == "MTH99":
-        duration = timedelta(days=30)
-    elif plan_code == "YR999":
-        duration = timedelta(days=365)
-    else:
-        duration = timedelta(days=30)
-
+    duration_days = 30 if plan_code == "MTH99" else 365
     now = datetime.utcnow()
-    expires = now + duration
+    expires = now + timedelta(days=duration_days)
 
-    # ---------------------------------------------------------
-    # Update subscription → ACTIVE
-    # ---------------------------------------------------------
-    sb.table("subscriptions").update({
-        "status": "active",
-        "razorpay_payment_id": payment_id,
-        "started_at": now.isoformat(),
-        "expires_at": expires.isoformat(),
-    }).eq("id", sub_id).execute()
+    sb.table("subscriptions").update(
+        {
+            "status": "active",
+            "razorpay_payment_id": payment_id,
+            "started_at": now.isoformat(),
+            "expires_at": expires.isoformat(),
+        }
+    ).eq("id", sub_id).execute()
 
-    # ---------------------------------------------------------
-    # UI
-    # ---------------------------------------------------------
     st.success("Payment successful! Your subscription is now active.")
-
     st.markdown(
         f"""
         **Payment ID:** {payment_id}  
@@ -110,57 +97,57 @@ def handle_payment_success() -> None:
 def render_subscriptions_page() -> None:
     st.header("Subscription")
 
-    # ---------------------------------------------------------
-    # Handle Razorpay redirect FIRST
-    # ---------------------------------------------------------
     params = st.query_params
     if "payment_id" in params:
         handle_payment_success()
         return
 
-    # ---------------------------------------------------------
-    # Require logged-in user
-    # ---------------------------------------------------------
     user_dict = require_user()
     user_id = str(user_dict.get("id", ""))
 
     sb = get_supabase()
 
-    # ---------------------------------------------------------
-    # Fetch active subscription
-    # ---------------------------------------------------------
     res = (
         sb.table("subscriptions")
         .select("*")
         .eq("user_id", user_id)
-        .single()
+        .maybe_single()
         .execute()
     )
 
-    sub: Optional[Dict[str, Any]] = res.data if isinstance(res.data, dict) else None
+    data = res.data if res is not None else None
+    sub = _safe_dict(data)
 
-    if sub and sub.get("status") == "active":
-        plan = plan_name(sub.get("plan_code", ""))
-        amount = format_inr(sub.get("amount", 0))
-        started = sub.get("started_at", "")
-        expires = sub.get("expires_at", "")
+    if not sub:
+        st.warning("You do not have any subscription yet.")
+        _render_plan_selection(sb, user_id)
+        return
 
-        st.success("You have an active subscription.")
-
-        st.markdown(
-            f"""
-            **Plan:** {plan}  
-            **Amount:** {amount}  
-            **Started:** {started}  
-            **Expires:** {expires}  
-            """
-        )
-    else:
+    if sub.get("status") != "active":
         st.warning("You do not have an active subscription.")
+        _render_plan_selection(sb, user_id)
+        return
 
-    # ---------------------------------------------------------
-    # Plan selection
-    # ---------------------------------------------------------
+    plan = plan_name(sub.get("plan_code", ""))
+    amount = format_inr(sub.get("amount", 0))
+    started = sub.get("started_at", "")
+    expires = sub.get("expires_at", "")
+
+    st.success("You have an active subscription.")
+    st.markdown(
+        f"""
+        **Plan:** {plan}  
+        **Amount:** {amount}  
+        **Started:** {started}  
+        **Expires:** {expires}  
+        """
+    )
+
+
+# ---------------------------------------------------------
+# PLAN SELECTION UI
+# ---------------------------------------------------------
+def _render_plan_selection(sb: Any, user_id: str) -> None:
     st.subheader("Choose a Plan")
 
     col1, col2 = st.columns(2)
@@ -177,7 +164,7 @@ def render_subscriptions_page() -> None:
 # ---------------------------------------------------------
 # START CHECKOUT (UPSERT + REDIRECT)
 # ---------------------------------------------------------
-def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None:
+def _start_checkout(sb: Any, user_id: str, plan_code: str, amount_paise: int) -> None:
     try:
         res = (
             sb.table("subscriptions")
@@ -193,7 +180,7 @@ def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None
                     "expires_at": None,
                     "razorpay_order_id": None,
                 },
-                on_conflict="user_id"
+                on_conflict="user_id",
             )
             .execute()
         )
@@ -201,14 +188,16 @@ def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None
         st.error(f"Failed to start checkout. ({exc})")
         return
 
-    sub = res.data[0] if isinstance(res.data, list) and res.data else None
-    if not sub:
+    data = res.data if res is not None else None
+    sub_list = data if isinstance(data, list) else []
+    sub = sub_list[0] if sub_list else None
+
+    if not isinstance(sub, dict):
         st.error("Failed to create subscription record.")
         return
 
     sub_id = sub.get("id")
 
-    # Redirect to Razorpay checkout page
     st.query_params = {
         "page": "razorpay_checkout",
         "sub_id": str(sub_id),
