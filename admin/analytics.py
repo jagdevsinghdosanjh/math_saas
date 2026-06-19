@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from auth import require_admin
 from utils.db import get_supabase
@@ -20,7 +20,8 @@ def _fetch_logs(limit: int = 200) -> List[Dict[str, Any]]:
             .limit(limit)
             .execute()
         )
-        raw = res.data or []
+
+        raw = res.data if isinstance(res.data, list) else []
         return [row for row in raw if isinstance(row, dict)]
 
     except Exception as exc:
@@ -31,12 +32,14 @@ def _fetch_logs(limit: int = 200) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------
 # MAIN ADMIN ANALYTICS PAGE
 # ---------------------------------------------------------
-def render():
+def render() -> None:
     require_admin()
 
     st.title("Usage Analytics")
 
+    # ---------------------------------------------------------
     # Filters
+    # ---------------------------------------------------------
     st.subheader("Filters")
 
     limit = st.slider("Number of logs to load", 50, 500, 200, step=50)
@@ -49,16 +52,31 @@ def render():
 
     df = pd.DataFrame(logs)
 
+    # ---------------------------------------------------------
     # Optional search
+    # ---------------------------------------------------------
     search_term = st.text_input("Search logs (action, user_id, etc.)")
 
     if search_term:
-        df = df[df.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
+        search_lower = search_term.lower()
+        df = df[
+            df.apply(
+                lambda row: any(
+                    search_lower in str(value).lower() for value in row.values
+                ),
+                axis=1,
+            )
+        ]
 
+    # ---------------------------------------------------------
+    # Logs Table
+    # ---------------------------------------------------------
     st.subheader("Usage Logs")
-    st.dataframe(df, width="stretch", hide_index=True)
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
+    # ---------------------------------------------------------
     # Inspect single log
+    # ---------------------------------------------------------
     st.subheader("Inspect Log Entry")
 
     ids = df["id"].astype(str).tolist()

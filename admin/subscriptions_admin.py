@@ -1,6 +1,5 @@
-#math_saas/admin/subscriptions_admin.py
 import streamlit as st
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta
 
 from auth import require_admin
@@ -8,7 +7,7 @@ from utils.db import get_supabase
 
 
 # ---------------------------------------------------------
-# FETCH SUBSCRIPTIONS
+# FETCH SUBSCRIPTIONS (TYPE-SAFE)
 # ---------------------------------------------------------
 def _fetch_subscriptions(status_filter: str) -> List[Dict[str, Any]]:
     sb = get_supabase()
@@ -16,8 +15,18 @@ def _fetch_subscriptions(status_filter: str) -> List[Dict[str, Any]]:
     query = (
         sb.table("subscriptions")
         .select(
-            "id, user_id, plan, plan_code, status, amount, currency, "
-            "razorpay_order_id, started_at, expires_at"
+            """
+            id,
+            user_id,
+            plan,
+            plan_code,
+            status,
+            amount,
+            currency,
+            razorpay_order_id,
+            started_at,
+            expires_at
+            """
         )
         .order("started_at", desc=True)
     )
@@ -26,7 +35,7 @@ def _fetch_subscriptions(status_filter: str) -> List[Dict[str, Any]]:
         query = query.eq("status", status_filter)
 
     res = query.execute()
-    raw = res.data or []
+    raw = res.data if isinstance(res.data, list) else []
 
     return [row for row in raw if isinstance(row, dict)]
 
@@ -34,11 +43,11 @@ def _fetch_subscriptions(status_filter: str) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------
 # SAFE HELPERS
 # ---------------------------------------------------------
-def _safe_get_dict(data: Any) -> Dict[str, Any]:
-    return data if isinstance(data, dict) else {}
+def _safe_dict(value: Any) -> Dict[str, Any]:
+    return value if isinstance(value, dict) else {}
 
 
-def _safe_parse_iso(dt: Any) -> datetime:
+def _safe_iso(dt: Any) -> datetime:
     if isinstance(dt, str):
         try:
             return datetime.fromisoformat(dt)
@@ -48,15 +57,13 @@ def _safe_parse_iso(dt: Any) -> datetime:
 
 
 def _safe_user_id(value: Any) -> str:
-    if isinstance(value, str) and value.strip():
-        return value
-    return ""
+    return value if isinstance(value, str) and value.strip() else ""
 
 
 # ---------------------------------------------------------
 # ADMIN ACTIONS
 # ---------------------------------------------------------
-def admin_activate(sub_id: str, user_id: str):
+def admin_activate(sub_id: str, user_id: str) -> bool:
     sb = get_supabase()
     now = datetime.utcnow()
     expires = now + timedelta(days=30)
@@ -74,7 +81,7 @@ def admin_activate(sub_id: str, user_id: str):
     return True
 
 
-def admin_expire(sub_id: str, user_id: str):
+def admin_expire(sub_id: str, user_id: str) -> bool:
     sb = get_supabase()
     now = datetime.utcnow().isoformat()
 
@@ -90,13 +97,19 @@ def admin_expire(sub_id: str, user_id: str):
     return True
 
 
-def admin_extend(sub_id: str, days: int):
+def admin_extend(sub_id: str, days: int) -> bool:
     sb = get_supabase()
 
-    res = sb.table("subscriptions").select("expires_at").eq("id", sub_id).single().execute()
-    data = _safe_get_dict(res.data)
+    res = (
+        sb.table("subscriptions")
+        .select("expires_at")
+        .eq("id", sub_id)
+        .single()
+        .execute()
+    )
 
-    current_exp = _safe_parse_iso(data.get("expires_at"))
+    data = _safe_dict(res.data)
+    current_exp = _safe_iso(data.get("expires_at"))
     new_exp = current_exp + timedelta(days=days)
 
     sb.table("subscriptions").update({
@@ -106,7 +119,7 @@ def admin_extend(sub_id: str, days: int):
     return True
 
 
-def admin_change_plan(sub_id: str, new_plan: str, new_plan_code: str):
+def admin_change_plan(sub_id: str, new_plan: str, new_plan_code: str) -> bool:
     sb = get_supabase()
 
     sb.table("subscriptions").update({
@@ -120,11 +133,12 @@ def admin_change_plan(sub_id: str, new_plan: str, new_plan_code: str):
 # ---------------------------------------------------------
 # MAIN ADMIN PAGE
 # ---------------------------------------------------------
-def render():
+def render() -> None:
     require_admin()
 
     st.title("Subscription Management")
 
+    # Filter
     status_filter = st.selectbox(
         "Filter by Status",
         ["all", "active", "pending", "expired", "failed"],
@@ -137,15 +151,20 @@ def render():
         st.info("No subscriptions found for this filter.")
         return
 
+    # Table
     st.subheader("All Subscriptions")
     st.dataframe(subs, use_container_width=True, hide_index=True)
 
+    # Inspect
     st.subheader("Inspect Subscription")
 
-    ids = [str(s["id"]) for s in subs]
+    ids = [str(s.get("id", "")) for s in subs]
     selected_id = st.selectbox("Select Subscription ID", ids)
 
-    selected = next((s for s in subs if str(s.get("id")) == selected_id), None)
+    selected: Optional[Dict[str, Any]] = next(
+        (s for s in subs if str(s.get("id", "")) == selected_id),
+        None
+    )
 
     if not selected:
         st.warning("Subscription not found.")
@@ -153,9 +172,8 @@ def render():
 
     st.json(selected)
 
-    # Safe user_id extraction
-    user_id_raw = selected.get("user_id")
-    user_id = _safe_user_id(user_id_raw)
+    # Safe user_id
+    user_id = _safe_user_id(selected.get("user_id"))
 
     st.markdown("---")
     st.subheader("Admin Actions")
@@ -187,6 +205,7 @@ def render():
     # CHANGE PLAN
     new_plan = col4.selectbox("New Plan", ["Monthly", "Yearly"])
     new_plan_code = "MTH99" if new_plan == "Monthly" else "YR999"
+
     if col4.button("Change Plan"):
         admin_change_plan(selected_id, new_plan, new_plan_code)
         st.success(f"Plan changed to {new_plan}")

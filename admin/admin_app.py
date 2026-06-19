@@ -35,15 +35,22 @@ def render_admin_sync() -> None:
 def run_admin() -> None:
     require_admin()
 
+    # -------------------------------------------------
     # Logout via query params
+    # -------------------------------------------------
     params = st.query_params
     if params.get("admin_logout") == "true":
         logout()
+        return
 
+    # -------------------------------------------------
     # Top bar
+    # -------------------------------------------------
     top_bar("Math Hub Admin Panel", "Admin", "admin_logout")
 
+    # -------------------------------------------------
     # Sidebar navigation
+    # -------------------------------------------------
     st.sidebar.markdown("### Navigation")
 
     nav_items = [
@@ -66,6 +73,9 @@ def run_admin() -> None:
         key="admin_menu_radio",
     )
 
+    # -------------------------------------------------
+    # Route mapping
+    # -------------------------------------------------
     routes = {
         "Analytics": render_analytics,
         "Subscriptions": render_subscriptions,
@@ -79,7 +89,14 @@ def run_admin() -> None:
         "Sync Chapters": render_admin_sync,
     }
 
+    # -------------------------------------------------
+    # Safe route execution
+    # -------------------------------------------------
     try:
-        routes.get(menu, render_analytics)()
+        handler = routes.get(menu)
+        if handler:
+            handler()
+        else:
+            st.error("Invalid admin section selected.")
     except Exception as exc:
         st.error(f"Error loading section: {exc}")
