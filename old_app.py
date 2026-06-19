@@ -12,8 +12,6 @@ from student.student_app import run_student
 from student.public_content import render_public_content
 from student.signup_page import render_signup_page
 from utils.db import get_supabase
-
-st.set_page_config(page_title="Math Hub", page_icon="📘", layout="wide")
 # -------------------------------------------------
 # GENERIC LOGIN HANDLER
 # -------------------------------------------------
@@ -56,7 +54,6 @@ def admin_login_form():
     st.markdown("<h3>Admin Login</h3>", unsafe_allow_html=True)
     email = st.text_input("Email", key="admin_email")
     password = st.text_input("Password", type="password", key="admin_pass")
-
     if st.button("Login as Admin"):
         profile, session = handle_login(email, password, "admin")
         if profile and session:
@@ -64,9 +61,8 @@ def admin_login_form():
             st.session_state["role"] = "admin"
             st.session_state["access_token"] = session.access_token
             st.session_state["refresh_token"] = session.refresh_token
+
             st.rerun()
-
-
 # -------------------------------------------------
 # STUDENT LOGIN FORM
 # -------------------------------------------------
@@ -74,7 +70,6 @@ def student_login_form():
     st.markdown("<h3>Student Login</h3>", unsafe_allow_html=True)
     email = st.text_input("Email", key="student_email")
     password = st.text_input("Password", type="password", key="student_pass")
-
     if st.button("Login as Student"):
         profile, session = handle_login(email, password, "student")
         if profile and session:
@@ -82,67 +77,51 @@ def student_login_form():
             st.session_state["role"] = "student"
             st.session_state["access_token"] = session.access_token
             st.session_state["refresh_token"] = session.refresh_token
-            st.rerun()
 
+            st.rerun()
+# -------------------------------------------------
+# MAIN ROUTER
+# -------------------------------------------------
 def main():
     restore_session()
-
-    # Allow Razorpay redirect to load checkout page
-    if st.query_params.get("page") == "razorpay_checkout":
-        st.switch_page("pages/razorpay_checkout.py")
-        return
-
     theme_choice = st.radio(
         "Choose Theme:",
         ["Dark (Neon)", "Light"],
         horizontal=True,
     )
-
     if theme_choice == "Light":
         apply_light_theme()
     else:
         apply_dark_theme()
-
     role = st.session_state.get("role")
-
     if role == "admin":
         run_admin()
         return
-
     if role == "student":
         run_student()
         return
-
     st.markdown("<h2>Welcome to Student's Math Companion</h2>", unsafe_allow_html=True)
-
     col1, col2, col3 = st.columns(3)
-
     with col1:
         if st.button("Admin Login"):
             st.session_state["login_mode"] = "admin"
             st.rerun()
-
     with col2:
         if st.button("Student Login"):
             st.session_state["login_mode"] = "student"
             st.rerun()
-
     with col3:
         if st.button("New Student? Sign Up"):
             st.session_state["login_mode"] = "signup"
             st.rerun()
-
     mode = st.session_state.get("login_mode")
-
     if mode == "admin":
         admin_login_form()
     elif mode == "student":
         student_login_form()
     elif mode == "signup":
         render_signup_page()
-
     st.markdown("<hr>", unsafe_allow_html=True)
     render_public_content()
-
 if __name__ == "__main__":
     main()
