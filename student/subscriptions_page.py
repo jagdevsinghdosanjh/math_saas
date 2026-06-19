@@ -198,8 +198,12 @@ def _start_checkout(sb: Any, user_id: str, plan_code: str, amount_paise: int) ->
 
     sub_id = sub.get("id")
 
-    st.query_params = {
-        "page": "razorpay_checkout",
-        "sub_id": str(sub_id),
-    }
-    st.rerun()
+    st.session_state["sub_id"] = str(sub_id)
+    st.switch_page("pages/razorpay_checkout.py")
+
+
+    # st.query_params = {
+    #     "page": "razorpay_checkout",
+    #     "sub_id": str(sub_id),
+    # }
+    # st.rerun()
