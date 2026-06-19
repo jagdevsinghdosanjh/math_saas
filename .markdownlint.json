@@ -1,0 +1,5 @@
+{
+  "ignore": [
+    "math-saas-venv/**"
+  ]
+}
