@@ -1,8 +1,8 @@
 import streamlit as st
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 import streamlit.components.v1 as components
 
-from utils.db import get_supabase, require_user
+from utils.db import get_supabase
 from utils.razorpay import get_razorpay_client, get_razorpay_keys
 from subscriptions.utils import format_inr, plan_name
 
@@ -15,7 +15,7 @@ def render_razorpay_checkout() -> None:
     # ---------------------------------------------------------
     sb = get_supabase()
     res = sb.auth.get_user()
-    user = res.user if res else None
+    user = res.user if res and res.user else None
 
     if not user:
         st.error("You are not logged in.")
@@ -51,7 +51,7 @@ def render_razorpay_checkout() -> None:
     )
 
     sub = res.data or {}
-    if not isinstance(sub, dict):
+    if not isinstance(sub, Dict):
         st.error("Subscription not found.")
         return
 
@@ -63,10 +63,17 @@ def render_razorpay_checkout() -> None:
         st.stop()
 
     # ---------------------------------------------------------
-    # Extract subscription details
+    # Extract subscription details (Pylance-safe)
     # ---------------------------------------------------------
     raw_amount = sub.get("amount")
-    amount = int(raw_amount) if isinstance(raw_amount, (int, float, str)) else 0
+
+    if isinstance(raw_amount, (int, float)):
+        amount = int(raw_amount)
+    elif isinstance(raw_amount, str) and raw_amount.isdigit():
+        amount = int(raw_amount)
+    else:
+        amount = 0
+
     currency = str(sub.get("currency") or "INR")
     plan_code = str(sub.get("plan_code") or "")
     plan = plan_name(plan_code)
@@ -75,7 +82,7 @@ def render_razorpay_checkout() -> None:
     # Create Razorpay order
     # ---------------------------------------------------------
     try:
-        order = client.order.create({  # type: ignore
+        order = client.order.create({  # type: ignore[attr-defined]
             "amount": amount,
             "currency": currency,
             "payment_capture": 1,
@@ -108,40 +115,39 @@ def render_razorpay_checkout() -> None:
     key_id, _ = get_razorpay_keys()
 
     # ---------------------------------------------------------
-    # Razorpay Checkout.js Embed
+    # Razorpay Checkout.js Embed (auto-open only once)
     # ---------------------------------------------------------
     checkout_html = f"""
-    <html>
-    <body>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <script>
-        var options = {{
-            "key": "{key_id}",
-            "amount": "{amount}",
-            "currency": "{currency}",
-            "name": "Math Hub",
-            "description": "{plan}",
-            "order_id": "{order_id}",
+        if (!window.rzp_opened) {{
+            window.rzp_opened = true;
 
-            "handler": function (response) {{
-                window.location.href =
-                    "?page=subscription&payment_id=" + response.razorpay_payment_id +
-                    "&order_id={order_id}" +
-                    "&signature=" + response.razorpay_signature;
-            }},
+            var options = {{
+                "key": "{key_id}",
+                "amount": "{amount}",
+                "currency": "{currency}",
+                "name": "Math Hub",
+                "description": "{plan}",
+                "order_id": "{order_id}",
 
-            "theme": {{
-                "color": "#00ff88"
-            }}
-        }};
+                "handler": function (response) {{
+                    window.location.href =
+                        "?page=subscriptions&payment_id=" + response.razorpay_payment_id +
+                        "&order_id={order_id}" +
+                        "&signature=" + response.razorpay_signature;
+                }},
 
-        var rzp = new Razorpay(options);
-        rzp.open();
+                "theme": {{
+                    "color": "#00ff88"
+                }}
+            }};
+
+            var rzp = new Razorpay(options);
+            rzp.open();
+        }}
     </script>
-
-    </body>
-    </html>
     """
 
     components.html(checkout_html, height=700, scrolling=False)
