@@ -45,7 +45,7 @@ def safe_order_create(client: Any, payload: Dict[str, Any]) -> Dict[str, Any]:
 # ---------------------------------------------------------
 def render_razorpay_checkout() -> None:
     sb = get_supabase()
-
+    
     # Require logged-in user
     user_res = sb.auth.get_user()
     user = user_res.user if user_res and getattr(user_res, "user", None) else None
@@ -58,7 +58,7 @@ def render_razorpay_checkout() -> None:
     # READ SUBSCRIPTION ID FROM SESSION STATE
     # ---------------------------------------------------------
     sub_id = st.session_state.get("sub_id", "")
-
+    st.write("DEBUG: Received sub_id =", sub_id)
     if not sub_id:
         st.error("Missing subscription ID.")
         st.stop()

@@ -148,7 +148,7 @@ def _render_plan_selection(sb: Any, user_id: str) -> None:
 
     with col1:
         if st.button("Buy Monthly"):
-            _start_checkout(sb, user_id, "MTH99", 9900)
+            _start_checkout(sb, user_id, "MTH99", 9900,)
 
     with col2:
         if st.button("Buy Yearly"):
@@ -159,6 +159,8 @@ def _render_plan_selection(sb: Any, user_id: str) -> None:
 # START CHECKOUT (UPSERT + NAVIGATE)
 # ---------------------------------------------------------
 def _start_checkout(sb: Any, user_id: str, plan_code: str, amount_paise: int) -> None:
+    st.write("DEBUG: Starting checkout…")
+    
     try:
         res = (
             sb.table("subscriptions")
@@ -192,8 +194,9 @@ def _start_checkout(sb: Any, user_id: str, plan_code: str, amount_paise: int) ->
 
     sub_id = sub.get("id")
 
-    # Store subscription ID for checkout page
+    st.write("DEBUG: Checkout started, sub_id =", sub_id)
+
     st.session_state["sub_id"] = str(sub_id)
 
-    # Navigate to Razorpay checkout page
     st.switch_page("pages/razorpay_checkout.py")
+
