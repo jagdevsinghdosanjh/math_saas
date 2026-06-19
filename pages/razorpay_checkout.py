@@ -53,11 +53,8 @@ def render_razorpay_checkout() -> None:
     user_res = sb.auth.get_user()
     user = user_res.user if user_res and getattr(user_res, "user", None) else None
 
-    st.write("DEBUG: sb.auth.get_user() result =", user_res)
-
     if not user:
         st.error("You are not logged in.")
-        st.write("DEBUG: No user, stopping checkout")
         st.stop()
 
     # ---------------------------------------------------------
@@ -73,7 +70,6 @@ def render_razorpay_checkout() -> None:
 
     if not sub_id:
         st.error("Missing subscription ID.")
-        st.write("DEBUG: Missing sub_id, stopping checkout")
         st.stop()
 
     # ---------------------------------------------------------
