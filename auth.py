@@ -117,31 +117,32 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
 
 # ------------------------------------------------------------
 # AUTH PERSISTENCE (SINGLE MODEL)
-# ------------------------------------------------------------
-def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
-    """Stores persistent login state + Supabase session."""
-    # Persist logical auth state
-    st.session_state["auth_state"] = {
-        "user": user,
-        "role": role,
-        "jwt": jwt,
-    }
+# # ------------------------------------------------------------
+# def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
+#     """Stores persistent login state + Supabase session."""
+#     # Persist logical auth state
+#     st.session_state["auth_state"] = {
+#         "user": user,
+#         "role": role,
+#         "jwt": jwt,
+#     }
+def set_logged_in_user(profile, role, access_token, refresh_token):
+    # Store user and tokens
+    st.session_state["user"] = profile
+    st.session_state["role"] = role
+    st.session_state["access_token"] = access_token
+    st.session_state["refresh_token"] = refresh_token
 
-    # Preserve Supabase session
+    # Preserve Supabase session if it exists
     supabase_session = st.session_state.get("session")
 
-    # Reset only auth keys
-    for key in ["user", "role", "jwt", "student", "admin"]:
+    # Remove old auth keys (cleanup)
+    for key in ["jwt", "student", "admin", "auth_state"]:
         st.session_state.pop(key, None)
 
     # Restore Supabase session
     if supabase_session is not None:
         st.session_state["session"] = supabase_session
-
-    # Unified login model
-    st.session_state["user"] = user
-    st.session_state["role"] = role
-    st.session_state["jwt"] = jwt
 
 def restore_session() -> None:
     """Restore Supabase + logical auth from auth_state, if present."""

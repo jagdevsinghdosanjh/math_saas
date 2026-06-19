@@ -57,8 +57,11 @@ def admin_login_form():
     if st.button("Login as Admin"):
         profile, session = handle_login(email, password, "admin")
         if profile and session:
-            st.session_state["session"] = session
-            set_logged_in_user(profile, "admin", session.access_token)
+            st.session_state["user"] = profile
+            st.session_state["role"] = "admin"
+            st.session_state["access_token"] = session.access_token
+            st.session_state["refresh_token"] = session.refresh_token
+
             st.rerun()
 # -------------------------------------------------
 # STUDENT LOGIN FORM
@@ -70,8 +73,11 @@ def student_login_form():
     if st.button("Login as Student"):
         profile, session = handle_login(email, password, "student")
         if profile and session:
-            st.session_state["session"] = session
-            set_logged_in_user(profile, "student", session.access_token)
+            st.session_state["user"] = profile
+            st.session_state["role"] = "student"
+            st.session_state["access_token"] = session.access_token
+            st.session_state["refresh_token"] = session.refresh_token
+
             st.rerun()
 # -------------------------------------------------
 # MAIN ROUTER
