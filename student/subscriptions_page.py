@@ -87,18 +87,14 @@ def render_subscriptions_page() -> None:
 # -------------------------------------------------
 def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None:
     try:
-        # -------------------------------------------------
-        # DEBUG: Check if Supabase client is authenticated
-        # -------------------------------------------------
+        # Debug: check authentication
         debug_user = sb.auth.get_user()
         st.write("DEBUG USER:", debug_user)
 
-        # -------------------------------------------------
-        # INSERT subscription row
-        # -------------------------------------------------
+        # UPSERT: update if exists, insert if not
         res = (
             sb.table("subscriptions")
-            .insert(
+            .upsert(
                 {
                     "user_id": user_id,
                     "plan": "Monthly" if plan_code == "MTH99" else "Yearly",
@@ -109,7 +105,8 @@ def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None
                     "started_at": None,
                     "expires_at": None,
                     "razorpay_order_id": None,
-                }
+                },
+                on_conflict="user_id"
             )
             .execute()
         )
@@ -118,9 +115,7 @@ def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None
         st.error(f"Subscription page coming soon. ({exc})")
         return
 
-    # -------------------------------------------------
-    # Extract inserted row
-    # -------------------------------------------------
+    # Extract row
     data = res.data or []
     sub = data[0] if data and isinstance(data[0], dict) else None
 
@@ -130,9 +125,7 @@ def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None
 
     sub_id = sub["id"]
 
-    # -------------------------------------------------
     # Redirect to Razorpay checkout page
-    # -------------------------------------------------
     st.query_params = {
         "page": "razorpay_checkout",
         "sub_id": str(sub_id),
