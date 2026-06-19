@@ -22,7 +22,7 @@ def render_subscriptions_page() -> None:
         st.error("Invalid student session.")
         return
 
-    # Supabase client
+    # Supabase client (JWT-aware)
     sb = get_supabase()
 
     # -------------------------------------------------
@@ -83,10 +83,19 @@ def render_subscriptions_page() -> None:
 
 
 # -------------------------------------------------
-# CHECKOUT STARTER (RLS SAFE)
+# CHECKOUT STARTER (RLS SAFE + DEBUG ENABLED)
 # -------------------------------------------------
 def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None:
     try:
+        # -------------------------------------------------
+        # DEBUG: Check if Supabase client is authenticated
+        # -------------------------------------------------
+        debug_user = sb.auth.get_user()
+        st.write("DEBUG USER:", debug_user)
+
+        # -------------------------------------------------
+        # INSERT subscription row
+        # -------------------------------------------------
         res = (
             sb.table("subscriptions")
             .insert(
@@ -104,10 +113,14 @@ def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None
             )
             .execute()
         )
+
     except Exception as exc:
         st.error(f"Subscription page coming soon. ({exc})")
         return
 
+    # -------------------------------------------------
+    # Extract inserted row
+    # -------------------------------------------------
     data = res.data or []
     sub = data[0] if data and isinstance(data[0], dict) else None
 
@@ -117,7 +130,9 @@ def _start_checkout(sb, user_id: str, plan_code: str, amount_paise: int) -> None
 
     sub_id = sub["id"]
 
+    # -------------------------------------------------
     # Redirect to Razorpay checkout page
+    # -------------------------------------------------
     st.query_params = {
         "page": "razorpay_checkout",
         "sub_id": str(sub_id),
