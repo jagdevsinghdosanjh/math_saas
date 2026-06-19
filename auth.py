@@ -1,7 +1,9 @@
-import streamlit as st
+# auth.py
+
 import re
 from typing import Any, Dict, List, cast
 
+import streamlit as st
 from utils.db import get_supabase
 
 TEXT_MUTED = "#a0a6b1"
@@ -71,13 +73,21 @@ def clean_math(text: Any) -> str:
     if not isinstance(text, str):
         return ""
     text = text.replace("\\\\(", "\\(").replace("\\\\)", "\\)")
-    text = text.replace("\\\\[", "\\[").replace("\\\\]", "\\]")
+    text = text.replace("\\\
+
+\[", "\
+
+\[").replace("\\\\]
+
+", "\\]
+
+")
     text = text.replace("\\\\frac", "\\frac")
     return re.sub(r"\$\s*\$", "$$", text)
 
 
 # ------------------------------------------------------------
-# PUBLIC CONTENT
+# PUBLIC CONTENT (HOME PAGE)
 # ------------------------------------------------------------
 def render_public_content() -> None:
     sb = get_supabase()
@@ -146,7 +156,12 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
         if isinstance(maybe_user, dict):
             user = maybe_user
 
-    display_name = user.get("full_name") or user.get("name") or role.capitalize()
+    display_name = (
+        user.get("full_name")
+        or user.get("name")
+        or user.get("email")
+        or role.capitalize()
+    )
 
     st.markdown(
         f"""
@@ -158,10 +173,8 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
         unsafe_allow_html=True,
     )
 
-    from auth import logout as _logout
-
     if st.button("Logout", key=f"logout_{role}"):
-        _logout()
+        logout()
 
 
 # ------------------------------------------------------------
@@ -170,40 +183,45 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
 def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     """
     Unified login handler.
-    - Does NOT clear session_state (prevents wiping student/admin keys)
+    - Does NOT clear session_state
     - Preserves Supabase session object
-    - Sets both 'user' and role-specific key ('student' or 'admin')
+    - Stores persistent auth_state for reruns
     """
-    st.session_state["auth_state"] = {
-    "user": user,
-    "role": role,
-    "jwt": jwt,
-}
 
-    # Preserve Supabase session if present
+    # 1. Persist logical auth state (for restore_session)
+    st.session_state["auth_state"] = {
+        "user": user,
+        "role": role,
+        "jwt": jwt,
+    }
+
+    # 2. Preserve Supabase session if present
     supabase_session = st.session_state.get("session")
 
-    # Reset only auth-related keys, not the entire session
+    # 3. Reset only auth-related keys (do NOT clear whole session)
     for key in ["user", "student", "admin", "role", "jwt"]:
-        if key in st.session_state:
-            del st.session_state[key]
+        st.session_state.pop(key, None)
 
-    # Restore Supabase session
+    # 4. Restore Supabase session
     if supabase_session is not None:
         st.session_state["session"] = supabase_session
 
-    # Unified session model
+    # 5. Unified session model
     st.session_state["user"] = user
     st.session_state["role"] = role
     st.session_state["jwt"] = jwt
 
-    # Role-specific compatibility
+    # 6. Role-specific compatibility
     if role == "student":
         st.session_state["student"] = user
     elif role == "admin":
         st.session_state["admin"] = user
 
-def restore_session():
+
+def restore_session() -> None:
+    """
+    Restore Supabase session + logical auth state on every rerun.
+    """
     session = st.session_state.get("session")
     auth_state = st.session_state.get("auth_state")
 
@@ -216,35 +234,37 @@ def restore_session():
             sb.auth.set_session(access_token, refresh_token)
 
     # Restore app login state
-    if auth_state:
-        st.session_state["user"] = auth_state["user"]
-        st.session_state["role"] = auth_state["role"]
-        st.session_state["jwt"] = auth_state["jwt"]
+    if auth_state and isinstance(auth_state, dict):
+        user = auth_state.get("user")
+        role = auth_state.get("role")
+        jwt = auth_state.get("jwt")
 
-        if auth_state["role"] == "student":
-            st.session_state["student"] = auth_state["user"]
-        elif auth_state["role"] == "admin":
-            st.session_state["admin"] = auth_state["user"]
+        if isinstance(user, dict) and isinstance(role, str):
+            st.session_state["user"] = user
+            st.session_state["role"] = role
+            st.session_state["jwt"] = jwt
 
+            if role == "student":
+                st.session_state["student"] = user
+            elif role == "admin":
+                st.session_state["admin"] = user
 
-# def restore_session() -> None:
-#     session = st.session_state.get("session")
-#     if not session:
-#         return
-
-#     sb = get_supabase()
-#     access_token = getattr(session, "access_token", None)
-#     refresh_token = getattr(session, "refresh_token", None)
-
-#     if access_token and refresh_token:
-#         sb.auth.set_session(access_token, refresh_token)
 
 # ------------------------------------------------------------
 # LOGOUT
 # ------------------------------------------------------------
 def logout() -> None:
     # Clear UI/session state
-    for key in ["user", "role", "jwt", "student", "admin", "login_mode", "session"]:
+    for key in [
+        "user",
+        "role",
+        "jwt",
+        "student",
+        "admin",
+        "login_mode",
+        "session",
+        "auth_state",
+    ]:
         st.session_state.pop(key, None)
 
     # Clear URL params and rerun
