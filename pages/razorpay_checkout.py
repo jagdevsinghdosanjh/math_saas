@@ -4,19 +4,17 @@ from typing import Any, Dict, Optional
 
 from utils.db import get_supabase
 from utils.razorpay import get_razorpay_client, get_razorpay_keys
-from subscriptions.utils import plan_name, format_inr  # format_inr kept for future UI use
+from subscriptions.utils import plan_name
 
 
 # ---------------------------------------------------------
 # SAFE HELPERS
 # ---------------------------------------------------------
 def safe_dict(value: Any) -> Optional[Dict[str, Any]]:
-    """Return value only if it's a dict, otherwise None."""
     return value if isinstance(value, dict) else None
 
 
 def safe_int(value: Any) -> int:
-    """Convert JSON-like value to int safely."""
     if isinstance(value, int):
         return value
     if isinstance(value, float):
@@ -27,14 +25,14 @@ def safe_int(value: Any) -> int:
 
 
 def safe_str(value: Any) -> str:
-    """Convert JSON-like value to string safely."""
-    if isinstance(value, (str, int, float)):
-        return str(value)
-    return ""
+    return str(value) if isinstance(value, (str, int, float)) else ""
 
 
 def safe_order_create(client: Any, payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Pylance-safe wrapper for Razorpay client.order.create()."""
+    """
+    Pylance-safe wrapper for Razorpay order.create().
+    Razorpay dynamically injects `.order`, so we suppress type checking.
+    """
     try:
         order = client.order.create(payload)  # type: ignore[attr-defined]
         return order if isinstance(order, dict) else {}
@@ -56,16 +54,10 @@ def render_razorpay_checkout() -> None:
         st.error("You are not logged in.")
         st.stop()
 
-    # Read query params safely
+    # Read query params
     params: Any = st.query_params
-    sub_id = ""
-
-    if isinstance(params, dict):
-        raw = params.get("sub_id")
-        if isinstance(raw, list):
-            sub_id = raw[0] if raw else ""
-        elif isinstance(raw, str):
-            sub_id = raw
+    raw_sub = params.get("sub_id", [""])
+    sub_id = raw_sub[0] if isinstance(raw_sub, list) else ""
 
     if not sub_id:
         st.error("Missing subscription ID.")
@@ -102,7 +94,7 @@ def render_razorpay_checkout() -> None:
         st.error("Razorpay keys not configured.")
         st.stop()
 
-    # Create Razorpay order
+    # Create Razorpay order (Pylance-safe)
     order = safe_order_create(
         client,
         {
@@ -124,15 +116,13 @@ def render_razorpay_checkout() -> None:
         st.stop()
 
     # Save order_id
-    sb.table("subscriptions").update(
-        {
-            "razorpay_order_id": order_id,
-        }
-    ).eq("id", sub_id).execute()
+    sb.table("subscriptions").update({
+        "razorpay_order_id": order_id
+    }).eq("id", sub_id).execute()
 
     key_id, _ = get_razorpay_keys()
 
-    # Render only the Razorpay script to avoid re-render issues
+    # Render ONLY the script — prevents Streamlit re-render issues
     html = f"""
     <html>
     <body>
@@ -164,7 +154,3 @@ def render_razorpay_checkout() -> None:
     """
 
     components.html(html, height=10)
-
-
-# For Streamlit pages, just call the renderer at import time
-render_razorpay_checkout()
