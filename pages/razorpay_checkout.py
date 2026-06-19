@@ -36,7 +36,8 @@ def safe_order_create(client: Any, payload: Dict[str, Any]) -> Dict[str, Any]:
     try:
         order = client.order.create(payload)  # type: ignore[attr-defined]
         return order if isinstance(order, dict) else {}
-    except Exception:
+    except Exception as exc:
+        st.write("DEBUG: Exception in safe_order_create:", exc)
         return {}
 
 
@@ -44,33 +45,36 @@ def safe_order_create(client: Any, payload: Dict[str, Any]) -> Dict[str, Any]:
 # MAIN CHECKOUT PAGE
 # ---------------------------------------------------------
 def render_razorpay_checkout() -> None:
+    st.write("DEBUG: render_razorpay_checkout() called")
+
     sb = get_supabase()
-    
+
     # Require logged-in user
     user_res = sb.auth.get_user()
     user = user_res.user if user_res and getattr(user_res, "user", None) else None
 
+    st.write("DEBUG: sb.auth.get_user() result =", user_res)
+
     if not user:
         st.error("You are not logged in.")
+        st.write("DEBUG: No user, stopping checkout")
         st.stop()
 
     # ---------------------------------------------------------
-    # READ SUBSCRIPTION ID FROM SESSION STATE
-    # ---------------------------------------------------------
     # READ SUBSCRIPTION ID
-sub_id = st.session_state.get("sub_id", "")
+    # ---------------------------------------------------------
+    sub_id = st.session_state.get("sub_id", "")
 
-if not sub_id:
-    params = st.query_params
-    sub_id = params.get("sub_id", [""])[0]
+    if not sub_id:
+        params = st.query_params
+        sub_id = params.get("sub_id", [""])[0]
 
-st.write("DEBUG: final sub_id used in checkout =", sub_id)
+    st.write("DEBUG: final sub_id used in checkout =", sub_id)
 
-if not sub_id:
-    st.error("Missing subscription ID.")
-    st.write("DEBUG: Missing sub_id, stopping checkout")
-    st.stop()
-
+    if not sub_id:
+        st.error("Missing subscription ID.")
+        st.write("DEBUG: Missing sub_id, stopping checkout")
+        st.stop()
 
     # ---------------------------------------------------------
     # FETCH SUBSCRIPTION
@@ -83,7 +87,11 @@ if not sub_id:
         .execute()
     )
 
+    st.write("DEBUG: subscription fetch response =", res)
+
     sub = safe_dict(res.data if res else None)
+    st.write("DEBUG: subscription record in checkout =", sub)
+
     if not sub:
         st.error("Subscription not found.")
         st.stop()
@@ -91,6 +99,7 @@ if not sub_id:
     # Authorization check
     if safe_str(sub.get("user_id")) != getattr(user, "id", ""):
         st.error("Unauthorized access.")
+        st.write("DEBUG: user_id mismatch, stopping checkout")
         st.stop()
 
     # Extract fields safely
@@ -99,13 +108,27 @@ if not sub_id:
     plan_code = safe_str(sub.get("plan_code"))
     plan = plan_name(plan_code)
 
+    st.write("DEBUG: checkout fields:", {
+        "amount": amount,
+        "currency": currency,
+        "plan_code": plan_code,
+        "plan": plan,
+    })
+
     # ---------------------------------------------------------
     # RAZORPAY ORDER CREATION
     # ---------------------------------------------------------
     client = get_razorpay_client()
+    st.write("DEBUG: Razorpay client =", client)
+
     if client is None:
         st.error("Razorpay keys not configured.")
+        st.write("DEBUG: client is None, stopping checkout")
         st.stop()
+
+    key_id, key_secret = get_razorpay_keys()
+    st.write("DEBUG: key_id =", key_id)
+    st.write("DEBUG: key_secret length =", len(key_secret))
 
     order = safe_order_create(
         client,
@@ -121,18 +144,20 @@ if not sub_id:
         },
     )
 
+    st.write("DEBUG: Razorpay order response =", order)
+
     order_id = safe_str(order.get("id"))
+    st.write("DEBUG: order_id =", order_id)
 
     if not order_id:
         st.error("Failed to create Razorpay order.")
+        st.write("DEBUG: missing order_id, stopping checkout")
         st.stop()
 
     # Save order_id
     sb.table("subscriptions").update({
         "razorpay_order_id": order_id
     }).eq("id", sub_id).execute()
-
-    key_id, _ = get_razorpay_keys()
 
     # ---------------------------------------------------------
     # RENDER RAZORPAY POPUP
@@ -168,3 +193,4 @@ if not sub_id:
     """
 
     components.html(html, height=10)
+    st.write("DEBUG: Razorpay popup should now be open")
