@@ -54,16 +54,18 @@ def render_razorpay_checkout() -> None:
         st.error("You are not logged in.")
         st.stop()
 
-    # Read query params
-    params: Any = st.query_params
-    raw_sub = params.get("sub_id", [""])
-    sub_id = raw_sub[0] if isinstance(raw_sub, list) else ""
+    # ---------------------------------------------------------
+    # READ SUBSCRIPTION ID FROM SESSION STATE
+    # ---------------------------------------------------------
+    sub_id = st.session_state.get("sub_id", "")
 
     if not sub_id:
         st.error("Missing subscription ID.")
         st.stop()
 
-    # Fetch subscription
+    # ---------------------------------------------------------
+    # FETCH SUBSCRIPTION
+    # ---------------------------------------------------------
     res = (
         sb.table("subscriptions")
         .select("*")
@@ -88,13 +90,14 @@ def render_razorpay_checkout() -> None:
     plan_code = safe_str(sub.get("plan_code"))
     plan = plan_name(plan_code)
 
-    # Razorpay client
+    # ---------------------------------------------------------
+    # RAZORPAY ORDER CREATION
+    # ---------------------------------------------------------
     client = get_razorpay_client()
     if client is None:
         st.error("Razorpay keys not configured.")
         st.stop()
 
-    # Create Razorpay order (Pylance-safe)
     order = safe_order_create(
         client,
         {
@@ -122,7 +125,9 @@ def render_razorpay_checkout() -> None:
 
     key_id, _ = get_razorpay_keys()
 
-    # Render ONLY the script — prevents Streamlit re-render issues
+    # ---------------------------------------------------------
+    # RENDER RAZORPAY POPUP
+    # ---------------------------------------------------------
     html = f"""
     <html>
     <body>

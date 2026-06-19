@@ -21,13 +21,9 @@ def _safe_dict(value: Any) -> Optional[Dict[str, Any]]:
 def handle_payment_success() -> None:
     params = st.query_params
 
-    payment_id_list = params.get("payment_id", [""])
-    order_id_list = params.get("order_id", [""])
-    signature_list = params.get("signature", [""])
-
-    payment_id = payment_id_list[0] if payment_id_list else ""
-    order_id = order_id_list[0] if order_id_list else ""
-    signature = signature_list[0] if signature_list else ""
+    payment_id = params.get("payment_id", [""])[0]
+    order_id = params.get("order_id", [""])[0]
+    signature = params.get("signature", [""])[0]
 
     if not payment_id or not order_id or not signature:
         st.info("No payment information found.")
@@ -55,9 +51,7 @@ def handle_payment_success() -> None:
         .execute()
     )
 
-    data = res.data if res is not None else None
-    sub = _safe_dict(data)
-
+    sub = _safe_dict(res.data if res else None)
     if not sub:
         st.error("Subscription not found for this payment.")
         return
@@ -97,6 +91,7 @@ def handle_payment_success() -> None:
 def render_subscriptions_page() -> None:
     st.header("Subscription")
 
+    # Handle payment callback
     params = st.query_params
     if "payment_id" in params:
         handle_payment_success()
@@ -115,8 +110,7 @@ def render_subscriptions_page() -> None:
         .execute()
     )
 
-    data = res.data if res is not None else None
-    sub = _safe_dict(data)
+    sub = _safe_dict(res.data if res else None)
 
     if not sub:
         st.warning("You do not have any subscription yet.")
@@ -162,7 +156,7 @@ def _render_plan_selection(sb: Any, user_id: str) -> None:
 
 
 # ---------------------------------------------------------
-# START CHECKOUT (UPSERT + REDIRECT)
+# START CHECKOUT (UPSERT + NAVIGATE)
 # ---------------------------------------------------------
 def _start_checkout(sb: Any, user_id: str, plan_code: str, amount_paise: int) -> None:
     try:
@@ -188,7 +182,7 @@ def _start_checkout(sb: Any, user_id: str, plan_code: str, amount_paise: int) ->
         st.error(f"Failed to start checkout. ({exc})")
         return
 
-    data = res.data if res is not None else None
+    data = res.data if res else None
     sub_list = data if isinstance(data, list) else []
     sub = sub_list[0] if sub_list else None
 
@@ -198,12 +192,8 @@ def _start_checkout(sb: Any, user_id: str, plan_code: str, amount_paise: int) ->
 
     sub_id = sub.get("id")
 
+    # Store subscription ID for checkout page
     st.session_state["sub_id"] = str(sub_id)
+
+    # Navigate to Razorpay checkout page
     st.switch_page("pages/razorpay_checkout.py")
-
-
-    # st.query_params = {
-    #     "page": "razorpay_checkout",
-    #     "sub_id": str(sub_id),
-    # }
-    # st.rerun()

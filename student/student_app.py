@@ -1,8 +1,6 @@
 import streamlit as st
 from typing import Any, Dict
 
-from pages.razorpay_checkout import render_razorpay_checkout
-
 from auth import (
     require_student,
     logout,
@@ -18,6 +16,9 @@ from student.billing_history import render_billing_history
 from student.public_content import render_public_content
 
 
+# ---------------------------------------------------------
+# QUIZ CHAPTERS
+# ---------------------------------------------------------
 def render_quiz_chapters() -> None:
     user: Dict[str, Any] = require_user()
     sb = get_supabase()
@@ -60,6 +61,9 @@ def render_quiz_chapters() -> None:
             )
 
 
+# ---------------------------------------------------------
+# MAIN STUDENT APP
+# ---------------------------------------------------------
 def run_student() -> None:
     app_container_style()
 
@@ -69,24 +73,15 @@ def run_student() -> None:
     sb = get_supabase()
 
     # ---------------------------------------------------------
-    # ROUTE: Razorpay Checkout (must run BEFORE tabs)
+    # LOGOUT
     # ---------------------------------------------------------
     params = st.query_params
-    page = params.get("page", [""])[0]
-
-    if page == "razorpay_checkout":
-        render_razorpay_checkout()
-        return
-
-    # ---------------------------------------------------------
-    # Logout
-    # ---------------------------------------------------------
     if params.get("student_logout") == "true":
         logout()
         return
 
     # ---------------------------------------------------------
-    # Normal Student UI
+    # NORMAL STUDENT UI
     # ---------------------------------------------------------
     top_bar("Math Hub Student Portal", "Student", "student_logout")
 
@@ -111,9 +106,14 @@ def run_student() -> None:
         "Math & News",
     ]
 
-    tab_dashboard, tab_chapters, tab_quiz, tab_subs, tab_billing, tab_public = st.tabs(
-        tab_labels
-    )
+    (
+        tab_dashboard,
+        tab_chapters,
+        tab_quiz,
+        tab_subs,
+        tab_billing,
+        tab_public,
+    ) = st.tabs(tab_labels)
 
     with tab_dashboard:
         render_dashboard()
