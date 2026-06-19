@@ -1,32 +1,37 @@
 import streamlit as st
 from supabase import create_client, Client
-from typing import Optional, Any
+from typing import Any, Dict
 
 
 # ------------------------------------------------------------
-# CREATE CLIENT (ANON KEY ONLY)
+# CREATE BASE CLIENT (ANON)
 # ------------------------------------------------------------
-def _create_client() -> Client:
+def _base_client() -> Client:
     url = st.secrets["supabase"]["url"]
-    key = st.secrets["supabase"]["anon_key"]
-    return create_client(url, key)
+    anon = st.secrets["supabase"]["anon_key"]
+    return create_client(url, anon)
 
 
 # ------------------------------------------------------------
-# GET CLIENT
+# GET SUPABASE CLIENT (JWT-AWARE, v2 COMPATIBLE)
 # ------------------------------------------------------------
 def get_supabase() -> Client:
-    return _create_client()
+    client = _base_client()
+
+    access_token = st.session_state.get("access_token")
+    refresh_token = st.session_state.get("refresh_token")
+
+    # Supabase Python v2 requires BOTH tokens as positional args
+    if access_token and refresh_token:
+        client.auth.set_session(access_token, refresh_token)
+
+    return client
 
 
 # ------------------------------------------------------------
-# REQUIRE LOGGED-IN USER (UNIFIED MODEL)
+# REQUIRE LOGGED-IN USER
 # ------------------------------------------------------------
-def require_user() -> dict:
-    """
-    Ensures the user is logged in using the unified auth model.
-    This is the ONLY correct check across the entire app.
-    """
+def require_user() -> Dict[str, Any]:
     user = st.session_state.get("user")
 
     if not isinstance(user, dict):
