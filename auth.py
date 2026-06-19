@@ -2,9 +2,11 @@ import streamlit as st
 import re
 from typing import Any, Dict, List, cast
 from utils.db import get_supabase
+
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
 ACCENT = "#00ff88"
+
 # ------------------------------------------------------------
 # GLOBAL STYLE
 # ------------------------------------------------------------
@@ -32,6 +34,7 @@ def app_container_style() -> None:
         """,
         unsafe_allow_html=True,
     )
+
 # ------------------------------------------------------------
 # SANITIZERS
 # ------------------------------------------------------------
@@ -40,6 +43,7 @@ def sanitize_html(text: str) -> str:
         return ""
     text = re.sub(r"</?div[^>]*>", "", text, flags=re.IGNORECASE)
     return text.replace("&nbsp;", " ").strip()
+
 def clean_math(text: Any) -> str:
     if not isinstance(text, str):
         return ""
@@ -47,6 +51,7 @@ def clean_math(text: Any) -> str:
     text = text.replace("\\\\[", "\\[").replace("\\\\]", "\\]")
     text = text.replace("\\\\frac", "\\frac")
     return re.sub(r"\$\s*\$", "$$", text)
+
 # ------------------------------------------------------------
 # PUBLIC CONTENT
 # ------------------------------------------------------------
@@ -71,6 +76,7 @@ def render_public_content() -> None:
         body = sanitize_html(clean_math(body_raw))
         st.markdown(f"### {title}")
         st.markdown(body, unsafe_allow_html=True)
+
 # ------------------------------------------------------------
 # THEMES
 # ------------------------------------------------------------
@@ -79,11 +85,13 @@ def apply_dark_theme() -> None:
         "<style>.main { background: #050608; color: #f8f9fa; }</style>",
         unsafe_allow_html=True,
     )
+
 def apply_light_theme() -> None:
     st.markdown(
         "<style>.main { background: #ffffff; color: #111827; }</style>",
         unsafe_allow_html=True,
     )
+
 # ------------------------------------------------------------
 # TOP BAR
 # ------------------------------------------------------------
@@ -106,8 +114,9 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
     )
     if st.button("Logout", key=f"logout_{role}"):
         logout()
+
 # ------------------------------------------------------------
-# AUTH PERSISTENCE
+# AUTH PERSISTENCE (SINGLE MODEL)
 # ------------------------------------------------------------
 def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
     """Stores persistent login state + Supabase session."""
@@ -117,26 +126,33 @@ def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
         "role": role,
         "jwt": jwt,
     }
+
     # Preserve Supabase session
     supabase_session = st.session_state.get("session")
+
     # Reset only auth keys
-    for key in ["user", "student", "admin", "role", "jwt"]:
+    for key in ["user", "role", "jwt", "student", "admin"]:
         st.session_state.pop(key, None)
+
     # Restore Supabase session
     if supabase_session is not None:
         st.session_state["session"] = supabase_session
-    # Restore unified login model
+
+    # Unified login model
     st.session_state["user"] = user
     st.session_state["role"] = role
     st.session_state["jwt"] = jwt
-    # Role-specific
-    if role == "student":
-        st.session_state["student"] = user
-    elif role == "admin":
-        st.session_state["admin"] = user
+
 def restore_session() -> None:
+    """Restore Supabase + logical auth from auth_state, if present."""
+    # Ensure keys exist
+    st.session_state.setdefault("user", None)
+    st.session_state.setdefault("role", None)
+    st.session_state.setdefault("jwt", None)
+
     session = st.session_state.get("session")
     auth_state = st.session_state.get("auth_state")
+
     # Restore Supabase session
     if session:
         sb = get_supabase()
@@ -144,32 +160,37 @@ def restore_session() -> None:
         refresh_token = getattr(session, "refresh_token", None)
         if access_token and refresh_token:
             sb.auth.set_session(access_token, refresh_token)
+
     # Restore app login state
     if auth_state:
-        st.session_state["user"] = auth_state["user"]
-        st.session_state["role"] = auth_state["role"]
-        st.session_state["jwt"] = auth_state["jwt"]
-        if auth_state["role"] == "student":
-            st.session_state["student"] = auth_state["user"]
-        elif auth_state["role"] == "admin":
-            st.session_state["admin"] = auth_state["user"]
+        st.session_state["user"] = auth_state.get("user")
+        st.session_state["role"] = auth_state.get("role")
+        st.session_state["jwt"] = auth_state.get("jwt")
+
 # ------------------------------------------------------------
 # LOGOUT
 # ------------------------------------------------------------
 def logout() -> None:
+    # Optional: sign out from Supabase too
+    try:
+        sb = get_supabase()
+        sb.auth.sign_out()
+    except Exception:
+        pass
+
     for key in [
         "user",
         "role",
         "jwt",
-        "student",
-        "admin",
         "login_mode",
         "session",
         "auth_state",
     ]:
         st.session_state.pop(key, None)
+
     st.query_params.clear()
     st.rerun()
+
 # ------------------------------------------------------------
 # ROLE HELPERS
 # ------------------------------------------------------------
@@ -177,6 +198,7 @@ def require_admin() -> None:
     if st.session_state.get("role") != "admin":
         st.error("Please login as admin.")
         st.stop()
+
 def require_student() -> None:
     if st.session_state.get("role") != "student":
         st.error("Please login as student.")
