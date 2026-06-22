@@ -15,11 +15,6 @@ from student.subscriptions_page import render_subscriptions_page
 from student.billing_history import render_billing_history
 from student.public_content import render_public_content
 
-# NEW IMPORTS FOR AI FEATURES
-from services.solver import solve_stepwise
-from services.question_generator import generate_questions
-from services.summary import summarize_chapter
-
 
 # ---------------------------------------------------------
 # QUIZ CHAPTERS
@@ -102,9 +97,6 @@ def run_student() -> None:
         unsafe_allow_html=True,
     )
 
-    # ---------------------------------------------------------
-    # NEW TABS ADDED HERE
-    # ---------------------------------------------------------
     tab_labels = [
         "Dashboard",
         "Chapters",
@@ -112,9 +104,6 @@ def run_student() -> None:
         "Subscription",
         "Billing",
         "Math & News",
-        "AI Tutor",
-        "Worksheet Generator",
-        "Chapter Notes",
     ]
 
     (
@@ -124,12 +113,8 @@ def run_student() -> None:
         tab_subs,
         tab_billing,
         tab_public,
-        tab_ai_tutor,
-        tab_worksheet,
-        tab_notes,
     ) = st.tabs(tab_labels)
 
-    # Existing Tabs
     with tab_dashboard:
         render_dashboard()
 
@@ -147,68 +132,3 @@ def run_student() -> None:
 
     with tab_public:
         render_public_content()
-
-    # ---------------------------------------------------------
-    # NEW FEATURE TAB 1: AI TUTOR
-    # ---------------------------------------------------------
-    with tab_ai_tutor:
-        st.subheader("🤖 AI Tutor – Explain My Mistake")
-
-        student_answer = st.text_area("Paste your incorrect solution")
-
-        if st.button("Explain My Mistake"):
-            if student_answer.strip():
-                with st.spinner("Analyzing your solution..."):
-                    result = solve_stepwise(student_answer)
-
-                st.subheader("Explanation")
-                for i, step in enumerate(result.get("steps", []), start=1):
-                    st.markdown(f"**Step {i}:** {step}")
-
-                st.subheader("Final Answer")
-                st.write(result.get("final_answer", ""))
-            else:
-                st.warning("Please paste your solution first.")
-
-    # ---------------------------------------------------------
-    # NEW FEATURE TAB 2: WORKSHEET GENERATOR
-    # ---------------------------------------------------------
-    with tab_worksheet:
-        st.subheader("📝 Worksheet Generator")
-
-        chapter = st.text_input("Enter chapter/topic")
-        count = st.slider("Number of questions", 5, 30, 10)
-
-        if st.button("Generate Worksheet"):
-            if chapter.strip():
-                with st.spinner("Generating worksheet..."):
-                    qs = generate_questions(chapter, count)
-
-                for i, q in enumerate(qs, start=1):
-                    st.markdown(f"**Q{i}. {q.get('question','')}**")
-                    with st.expander("Show Answer"):
-                        st.write(q.get("answer", ""))
-            else:
-                st.warning("Please enter a chapter/topic.")
-
-    # ---------------------------------------------------------
-    # NEW FEATURE TAB 3: CHAPTER NOTES GENERATOR
-    # ---------------------------------------------------------
-    with tab_notes:
-        st.subheader("📘 Chapter Notes Generator")
-
-        text = st.text_area("Paste chapter text")
-
-        if st.button("Generate Notes"):
-            if text.strip():
-                with st.spinner("Generating notes..."):
-                    notes = summarize_chapter(text)
-
-                st.subheader("Summary")
-                st.write(notes.get("summary", ""))
-
-                st.subheader("Key Points")
-                for pt in notes.get("key_points", []):
-                    st.markdown(f"- {pt}")
-            else:
-                st.warning("Please paste chapter text.")
