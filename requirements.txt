@@ -5,3 +5,4 @@ razorpay
 streamlit-cookies-manager
 fastapi
 uvicorn
+openai
