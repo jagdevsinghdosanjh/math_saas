@@ -1,5 +1,5 @@
 import requests
-from config import OLLAMA_URL, OLLAMA_MODEL_MATH, OLLAMA_MODEL_SUMMARY
+from utils.config import OLLAMA_URL, OLLAMA_MODEL_MATH, OLLAMA_MODEL_SUMMARY
 
 def _call_ollama(model: str, prompt: str) -> str:
     payload = {

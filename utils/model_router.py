@@ -1,6 +1,6 @@
 # utils/model_router.py
 
-from config import USE_OLLAMA
+from utils.config import USE_OLLAMA
 from utils.ollama_client import ask_ollama_math, ask_ollama_summary
 
 # Optional fallback (only if you still use OpenAI)
