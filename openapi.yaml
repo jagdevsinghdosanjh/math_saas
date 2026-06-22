@@ -1,0 +1,112 @@
+openapi: 3.1.0
+info:
+  title: Math SaaS API
+  version: 1.0.0
+  description: API for generating math questions, solving stepwise, and creating chapter summaries using OpenAI models.
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+paths:
+  /generate-questions:
+    post:
+      operationId: generateQuestions
+      summary: Generate practice questions for a chapter
+      description: Generates a set of questions based on chapter name and difficulty.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chapter:
+                  type: string
+                  description: Name of the chapter
+                difficulty:
+                  type: string
+                  enum: [easy, medium, hard]
+                  description: Difficulty level
+                count:
+                  type: integer
+                  description: Number of questions to generate
+              required: [chapter, difficulty, count]
+      responses:
+        "200":
+          description: Successfully generated questions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  questions:
+                    type: array
+                    items:
+                      type: string
+
+  /solve-stepwise:
+    post:
+      operationId: solveStepwise
+      summary: Solve a math problem step-by-step
+      description: Returns a detailed step-by-step solution for a given math problem.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                problem:
+                  type: string
+                  description: Math problem to solve
+              required: [problem]
+      responses:
+        "200":
+          description: Stepwise solution generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  steps:
+                    type: array
+                    items:
+                      type: string
+
+  /chapter-summary:
+    post:
+      operationId: chapterSummary
+      summary: Generate a chapter summary
+      description: Creates a structured summary for a given chapter.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chapter:
+                  type: string
+                  description: Name of the chapter
+              required: [chapter]
+      responses:
+        "200":
+          description: Summary generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  summary:
+                    type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
