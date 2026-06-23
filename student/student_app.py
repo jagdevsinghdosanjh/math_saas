@@ -55,12 +55,17 @@ def render_quiz_chapters() -> None:
         title = ch.get("chapter_name", "Untitled")
         chapter_key = ch.get("chapter_key", "")
 
-        quiz_url = ("https://jsdasr-math-cbse.vercel.app/9th-Math/index.html?"
-            f"chapter={chapter_key}")
-        
+        quiz_url = (
+            "https://jsdasr-math-cbse.vercel.app/9th-Math/index.html?"
+            f"chapter={chapter_key}"
+        )
+
         with st.expander(str(title or "Untitled")):
             st.write(f"Practice quizzes for **{title}**")
-            st.markdown(f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>', unsafe_allow_html=True,)
+            st.markdown(
+                f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>',
+                unsafe_allow_html=True,
+            )
 
 
 # ---------------------------------------------------------
@@ -127,23 +132,38 @@ def run_student() -> None:
     ) = st.tabs(tab_labels)
 
     # ---------------------------------------------------------
-    # EXISTING TABS
+    # DASHBOARD TAB
     # ---------------------------------------------------------
     with tab_dashboard:
         render_dashboard()
 
+    # ---------------------------------------------------------
+    # CHAPTERS TAB
+    # ---------------------------------------------------------
     with tab_chapters:
         render_chapters_page()
 
+    # ---------------------------------------------------------
+    # QUIZ TAB
+    # ---------------------------------------------------------
     with tab_quiz:
         render_quiz_chapters()
 
+    # ---------------------------------------------------------
+    # SUBSCRIPTION TAB
+    # ---------------------------------------------------------
     with tab_subs:
         render_subscriptions_page()
 
+    # ---------------------------------------------------------
+    # BILLING TAB
+    # ---------------------------------------------------------
     with tab_billing:
         render_billing_history()
 
+    # ---------------------------------------------------------
+    # PUBLIC CONTENT TAB
+    # ---------------------------------------------------------
     with tab_public:
         render_public_content()
 
@@ -175,29 +195,27 @@ def run_student() -> None:
     with tab_worksheet:
         st.subheader("📝 Worksheet Generator")
 
-    chapter = st.text_input("Enter chapter/topic")
-    count = st.slider("Number of questions", 5, 30, 10)
+        chapter = st.text_input("Enter chapter/topic")
+        count = st.slider("Number of questions", 5, 30, 10)
 
-    if st.button("Generate Worksheet"):
-        if chapter.strip():
-            with st.spinner("Generating worksheet..."):
-                qs = generate_questions(chapter, count)
+        if st.button("Generate Worksheet"):
+            if chapter.strip():
+                with st.spinner("Generating worksheet..."):
+                    qs = generate_questions(chapter, count)
 
-            for i, q in enumerate(qs, start=1):
-                question_text = q.get("question", "")
-                answer_text = q.get("answer", "")
+                for i, q in enumerate(qs, start=1):
+                    question_text = q.get("question", "")
+                    answer_text = q.get("answer", "")
 
-                st.markdown(f"**Q{i}. {question_text}**")
+                    st.markdown(f"**Q{i}. {question_text}**")
 
-                with st.expander("Show Answer"):
-                    st.write(answer_text)
+                    with st.expander("Show Answer"):
+                        st.write(answer_text)
+            else:
+                st.warning("Please enter a chapter/topic.")
 
-        else:
-            st.warning("Please enter a chapter/topic.")
-
-    
     # ---------------------------------------------------------
-    # CHAPTER NOTES GENERATOR TAB
+    # CHAPTER NOTES TAB
     # ---------------------------------------------------------
     with tab_notes:
         st.subheader("📘 Chapter Notes Generator")
