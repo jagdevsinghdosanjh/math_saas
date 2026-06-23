@@ -19,4 +19,5 @@ OLLAMA_URL = "https://ollama.jsdmath.in/api/generate"
 OLLAMA_MODEL_MATH = "deepseek-r1:7b"
 
 # Fast text model (default for summaries, questions, long prompts)
-OLLAMA_MODEL_SUMMARY = "llama3"
+OLLAMA_MODEL_SUMMARY = "llama3:8b"
+# OLLAMA_MODEL_SUMMARY = "llama3"

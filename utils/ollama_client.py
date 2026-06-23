@@ -1,23 +1,30 @@
 # utils/ollama_client.py
 
 import requests
+import time
+from typing import Optional
+
 from utils.config import (
     OLLAMA_URL,
     OLLAMA_MODEL_MATH,
     OLLAMA_MODEL_SUMMARY,
 )
 
-# Cloudflare timeout limit is ~100 seconds → keep below that
-DEFAULT_TIMEOUT = 90
+# Cloudflare can drop long requests → keep timeout high
+DEFAULT_TIMEOUT = 180
+
+# Retry settings
+MAX_RETRIES = 2
+RETRY_DELAY = 2  # seconds
 
 
 def _call_ollama(model: str, prompt: str) -> str:
     """
-    Low-level Ollama caller.
-    Handles:
-    - Timeout protection
-    - HTTP errors
-    - Missing response fields
+    Robust Ollama caller with:
+    - Retry logic
+    - Cloudflare-safe timeouts
+    - Graceful fallback
+    - Clean error messages
     """
 
     payload = {
@@ -26,27 +33,37 @@ def _call_ollama(model: str, prompt: str) -> str:
         "stream": False,
     }
 
-    try:
-        resp = requests.post(
-            OLLAMA_URL,
-            json=payload,
-            timeout=DEFAULT_TIMEOUT
-        )
-        resp.raise_for_status()
+    last_error: Optional[str] = None
 
-        data = resp.json()
-        return (data.get("response") or "").strip()
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = requests.post(
+                OLLAMA_URL,
+                json=payload,
+                timeout=DEFAULT_TIMEOUT,
+            )
+            resp.raise_for_status()
 
-    except Exception as e:
-        # Always return a string (router + services expect this)
-        return f"Ollama error: {str(e)}"
+            data = resp.json()
+            return (data.get("response") or "").strip()
+
+        except Exception as e:
+            last_error = str(e)
+
+            # Retry only if attempts remain
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY)
+                continue
+
+    # Final fallback error
+    return f"Ollama error: {last_error}"
 
 
 def ask_ollama_math(prompt: str) -> str:
-    """Call the math/logic model (deepseek-r1)."""
+    """Call the math/logic model."""
     return _call_ollama(OLLAMA_MODEL_MATH, prompt)
 
 
 def ask_ollama_summary(prompt: str) -> str:
-    """Call the fast text model (llama3)."""
+    """Call the fast text model."""
     return _call_ollama(OLLAMA_MODEL_SUMMARY, prompt)
