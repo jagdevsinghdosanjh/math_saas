@@ -11,7 +11,7 @@ from utils.config import (
 )
 
 # Cloudflare can drop long requests → keep timeout high
-DEFAULT_TIMEOUT = 180
+DEFAULT_TIMEOUT = 240
 
 # Retry settings
 MAX_RETRIES = 2
