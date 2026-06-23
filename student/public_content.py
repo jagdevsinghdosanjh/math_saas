@@ -8,7 +8,7 @@ from student.dashboard import get_user_active_subscription
 
 
 # ---------------------------------------------------------
-# FETCH PUBLIC CONTENT (RLS‑AWARE)
+# FETCH PUBLIC CONTENT (RLS‑AWARE + SAFE)
 # ---------------------------------------------------------
 def _fetch_public_content() -> List[Dict[str, Any]]:
     sb = get_supabase()
@@ -16,14 +16,17 @@ def _fetch_public_content() -> List[Dict[str, Any]]:
     try:
         res = (
             sb.table("public_content")
-            .select("id, title, body, category, is_premium, is_published, created_at")
+            .select(
+                "id, title, body, category, is_premium, "
+                "is_published, created_at"
+            )
             .eq("is_published", True)
             .order("created_at", desc=True)
             .execute()
         )
 
-        raw = res.data or []
-        return [row for row in raw if isinstance(row, dict)]
+        rows = res.data or []
+        return [row for row in rows if isinstance(row, dict)]
 
     except Exception as exc:
         st.error(f"Error fetching content: {exc}")
@@ -49,18 +52,19 @@ def render_public_content() -> None:
 
     # Subscription check only if logged in
     active_sub = get_user_active_subscription(user_id) if user_id else None
-    has_access: bool = active_sub is not None
+    has_access = active_sub is not None
 
     # ---------------------------------------------------------
     # RENDER CONTENT CARDS
     # ---------------------------------------------------------
     for item in items:
-        title = str(item.get("title", "Untitled"))
-        raw_body = str(item.get("body", ""))
+        # Safe extraction
+        title = str(item.get("title") or "Untitled")
+        raw_body = str(item.get("body") or "")
         body = fix_math_rendering(raw_body)
 
-        premium: bool = bool(item.get("is_premium", False))
-        category: str = str(item.get("category", "General"))
+        premium = bool(item.get("is_premium", False))
+        category = str(item.get("category") or "General")
 
         # -------------------------------
         # PREMIUM CONTENT (LOCKED)
