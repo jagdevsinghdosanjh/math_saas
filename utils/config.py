@@ -4,8 +4,7 @@
 USE_OLLAMA = True
 
 # Ollama server URL
-#OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_URL = "https://jumping-pontiac-flowers-finder.trycloudflare.com/api/generate"
+OLLAMA_URL = "https://ollama.jsdmath.in/api/generate"
 
 # Models for different tasks
 OLLAMA_MODEL_MATH = "deepseek-r1:7b"
