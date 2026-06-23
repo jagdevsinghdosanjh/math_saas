@@ -8,4 +8,5 @@ OLLAMA_URL = "https://ollama.jsdmath.in/api/generate"
 
 # Models for different tasks
 OLLAMA_MODEL_MATH = "deepseek-r1:7b"
-OLLAMA_MODEL_SUMMARY = "llama3.1:8b"
+OLLAMA_MODEL_SUMMARY = "llama3"
+#OLLAMA_MODEL_SUMMARY = "llama3.1:8b"
