@@ -32,8 +32,8 @@ def fetch_chapters(grade: str, board: str) -> List[Dict[str, Any]]:
             .execute()
         )
 
-        data = res.data or []
-        return [row for row in data if isinstance(row, dict)]
+        rows = res.data or []
+        return [row for row in rows if isinstance(row, dict)]
 
     except Exception as exc:
         st.error(f"Error loading chapters: {exc}")
@@ -54,12 +54,12 @@ def fetch_progress(user_id: str) -> Dict[str, float]:
             .execute()
         )
 
-        raw = res.data or []
+        rows = res.data or []
         progress_map: Dict[str, float] = {}
 
-        for row in raw:
+        for row in rows:
             if isinstance(row, dict):
-                cid = str(row.get("chapter_id", ""))
+                cid = str(row.get("chapter_id") or "")
                 progress_map[cid] = safe_float(row.get("progress", 0))
 
         return progress_map
@@ -77,9 +77,9 @@ def render_chapter_card(
     locked: bool
 ) -> None:
 
-    cid = str(chapter.get("id", ""))
-    chapter_name = str(chapter.get("chapter_name", "Untitled"))
-    chapter_key = str(chapter.get("chapter_key", ""))
+    cid = str(chapter.get("id") or "")
+    chapter_name = str(chapter.get("chapter_name") or "Untitled")
+    chapter_key = str(chapter.get("chapter_key") or "")
 
     st.markdown(
         f"""
@@ -118,7 +118,7 @@ def render_chapters_page(sb=None, user=None) -> None:
     # Unified login model
     user_dict: Dict[str, Any] = require_user()
 
-    user_id: str = str(user_dict.get("id", ""))
+    user_id: str = str(user_dict.get("id") or "")
     if not user_id:
         st.error("Invalid user session.")
         st.stop()
@@ -160,8 +160,8 @@ def render_chapters_page(sb=None, user=None) -> None:
 
     # Render chapter cards
     for chapter in chapters:
-        cid = str(chapter.get("id", ""))
-        chapter_key = str(chapter.get("chapter_key", ""))
+        cid = str(chapter.get("id") or "")
+        chapter_key = str(chapter.get("chapter_key") or "")
 
         premium: bool = chapter_key.lower().startswith("p_")
         locked: bool = premium and not has_premium
