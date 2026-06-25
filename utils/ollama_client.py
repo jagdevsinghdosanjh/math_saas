@@ -19,7 +19,7 @@ def _debug(msg: str):
     print(f"[OLLAMA DEBUG] {msg}")
 
 
-def _call_ollama(model: str, prompt: str) -> str:
+def _call_ollama(model: str, prompt: str)->str:
     payload = {
         "model": model,
         "messages": [
