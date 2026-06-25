@@ -16,15 +16,10 @@ RETRY_DELAY = 2
 
 
 def _debug(msg: str):
-    """Print debug messages safely."""
     print(f"[OLLAMA DEBUG] {msg}")
 
 
 def _call_ollama(model: str, prompt: str) -> str:
-    """
-    Robust Ollama caller using /api/chat with full debug logging.
-    """
-
     payload = {
         "model": model,
         "messages": [
@@ -50,7 +45,7 @@ def _call_ollama(model: str, prompt: str) -> str:
             )
 
             _debug(f"HTTP Status: {resp.status_code}")
-            _debug(f"Raw Response Text: {resp.text}")
+            _debug(f"Raw Response: {resp.text}")
 
             resp.raise_for_status()
 
@@ -63,7 +58,7 @@ def _call_ollama(model: str, prompt: str) -> str:
 
         except Exception as e:
             last_error = str(e)
-            _debug(f"Error on attempt {attempt}: {last_error}")
+            _debug(f"Error: {last_error}")
 
             if attempt < MAX_RETRIES:
                 _debug(f"Retrying in {RETRY_DELAY} seconds...")
