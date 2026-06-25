@@ -11,7 +11,6 @@ def solve_stepwise(question: str) -> dict:
     - Uses llama3 for long prompts (avoids Cloudflare 524)
     - Ensures JSON output is parsed or safely repaired
     """
-
     # Safety: trim very long questions
     max_chars = 1500
     if len(question) > max_chars:
