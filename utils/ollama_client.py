@@ -4,7 +4,7 @@ from utils.config import OLLAMA_URL, OLLAMA_MODEL_MATH, OLLAMA_MODEL_SUMMARY
 
 def _call_ollama(model: str, prompt: str) -> str:
     """
-    Calls Ollama using the /api/generate endpoint.
+    Calls Ollama using the /api/chat endpoint.
     Returns a clean string response.
     """
 
