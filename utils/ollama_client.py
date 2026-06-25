@@ -51,7 +51,7 @@ def _call_ollama(model: str, prompt: str) -> str:
                 time.sleep(RETRY_DELAY)
                 continue
 
-            return f"Ollama error: {last_error}"
+            return f"Ollama error type is: {last_error}"
 
 
 def ask_ollama_math(prompt: str) -> str:
