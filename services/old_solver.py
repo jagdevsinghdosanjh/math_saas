@@ -1,18 +1,16 @@
 # services/solver.py
 
 import json
-from utils.ollama_client import ask_ollama_math
+from utils.model_router import ask_model
 
 
 def solve_stepwise(question: str) -> dict:
     """
-    Step-by-step math solver using the new /api/generate math engine.
-    Ensures:
-    - JSON-safe output
-    - automatic repair of malformed JSON
-    - stable behavior behind Cloudflare Tunnel
+    Step-by-step math solver using the intelligent model router.
+    - Uses deepseek-r1 only for short prompts
+    - Uses llama3 for long prompts (avoids Cloudflare 524)
+    - Ensures JSON output is parsed or safely repaired
     """
-
     # Safety: trim very long questions
     max_chars = 1500
     if len(question) > max_chars:
@@ -32,16 +30,14 @@ Return STRICT JSON only (no extra text), in this format:
 Problem: {question}
 """
 
-    # Use the new math engine (single-shot, stable)
-    raw = ask_ollama_math(prompt)
+    # Use the new router (NOT ask_ollama_math)
+    raw = ask_model(prompt, task="math")
 
     # Try direct JSON parse
     try:
         data = json.loads(raw)
         if isinstance(data, dict):
             return data
-    except json.JSONDecodeError:
-        pass
     except Exception:
         pass
 
@@ -68,7 +64,6 @@ def _attempt_json_repair(text: str) -> dict | None:
     try:
         start = text.find("{")
         end = text.rfind("}") + 1
-
         if start != -1 and end != -1:
             snippet = text[start:end]
 
@@ -78,9 +73,6 @@ def _attempt_json_repair(text: str) -> dict | None:
             data = json.loads(snippet)
             if isinstance(data, dict):
                 return data
-
-    except json.JSONDecodeError:
-        return None
     except Exception:
         return None
 

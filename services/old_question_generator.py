@@ -1,16 +1,14 @@
-# services/question_generator.py
-
 import json
-from utils.ollama_client import ask_ollama_math
+from utils.model_router import ask_model
 
 
 def generate_questions(chapter: str, count: int = 10) -> list:
     """
-    Generate exam-style math questions using the new /api/generate math engine.
+    Generate exam-style math questions using the intelligent model router.
     Ensures:
-    - Stable output behind Cloudflare Tunnel
-    - JSON-safe parsing
-    - Automatic repair of malformed JSON
+    - No Cloudflare 524 timeouts
+    - llama3 used for long prompts
+    - JSON output is validated and repaired if needed
     """
 
     # Safety: trim extremely long chapter text
@@ -32,16 +30,14 @@ Return STRICTLY valid JSON (no commentary, no markdown), in this format:
 ]
 """
 
-    # Use the new math engine (single-shot, stable)
-    raw = ask_ollama_math(prompt)
+    # Use the new router (NOT ask_model_math)
+    raw = ask_model(prompt, task="questions")
 
     # Try to parse JSON directly
     try:
         data = json.loads(raw)
         if isinstance(data, list):
             return data
-    except json.JSONDecodeError:
-        pass
     except Exception:
         pass
 
@@ -68,22 +64,50 @@ def _attempt_json_repair(text: str) -> list | None:
     """
 
     try:
+        # Extract JSON-like content
         start = text.find("[")
         end = text.rfind("]") + 1
-
         if start != -1 and end != -1:
             snippet = text[start:end]
 
+            # Replace single quotes with double quotes
             snippet = snippet.replace("'", '"')
+
+            # Remove trailing commas
             snippet = snippet.replace(",]", "]")
 
             data = json.loads(snippet)
             if isinstance(data, list):
                 return data
-
-    except json.JSONDecodeError:
-        return None
     except Exception:
         return None
 
     return None
+
+# import json
+# from utils.model_router import ask_model
+
+# def generate_questions(chapter: str, count: int = 10) -> list:
+#     prompt = f"""
+#     You are a math question generator.
+
+#     Chapter/topic: {chapter}
+#     Generate {count} questions of mixed difficulty.
+#     Return STRICTLY valid JSON (no extra text), in this format:
+
+#     [
+#       {{"question": "...", "answer": "...", "difficulty": "easy|medium|hard"}},
+#       ...
+#     ]
+#     """
+
+#     raw = ask_model_math(prompt, task="questions")
+
+#     try:
+#         data = json.loads(raw)
+#         if isinstance(data, list):
+#             return data
+#     except Exception:
+#         pass
+
+#     return [{"question": raw, "answer": "", "difficulty": "unknown"}]

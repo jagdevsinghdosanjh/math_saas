@@ -28,10 +28,10 @@ def _safe_parse_ollama_response(response_text: str):
                 return data["message"]["content"].strip()
             if "response" in data:
                 return data["response"].strip()
-    except:
+    except json.JSONDecodeError:
         pass
 
-    # 2) Try streaming JSON (line-by-line)
+    # 2) Try streaming JSON
     for line in text.splitlines():
         try:
             data = json.loads(line)
@@ -39,10 +39,9 @@ def _safe_parse_ollama_response(response_text: str):
                 return data["message"]["content"].strip()
             if "response" in data:
                 return data["response"].strip()
-        except:
+        except json.JSONDecodeError:
             continue
 
-    # 3) Fallback: return raw text
     return text
 
 
@@ -51,9 +50,6 @@ def _safe_parse_ollama_response(response_text: str):
 # ============================================================
 
 def _call_chat(model: str, prompt: str) -> str:
-    """
-    Uses /api/chat (multi-turn chat style)
-    """
     if not USE_OLLAMA:
         return "Ollama disabled in config.py"
 
@@ -84,14 +80,13 @@ def _call_chat(model: str, prompt: str) -> str:
 
         return _safe_parse_ollama_response(raw)
 
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         return f"Chat Error: {str(e)}"
+    except Exception as e:
+        return f"Chat Unexpected Error: {str(e)}"
 
 
 def _call_generate(model: str, prompt: str) -> str:
-    """
-    Uses /api/generate (single-shot generation)
-    """
     if not USE_OLLAMA:
         return "Ollama disabled in config.py"
 
@@ -122,26 +117,21 @@ def _call_generate(model: str, prompt: str) -> str:
 
         return _safe_parse_ollama_response(raw)
 
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         return f"Generate Error: {str(e)}"
+    except Exception as e:
+        return f"Generate Unexpected Error: {str(e)}"
 
 
 # ============================================================
-# PUBLIC FUNCTIONS (CLEAN API FOR YOUR APP)
+# PUBLIC FUNCTIONS
 # ============================================================
 
 def ask_ollama_math(prompt: str) -> str:
-    """
-    Math engine → single-shot reasoning → /api/generate
-    """
     return _call_generate(OLLAMA_MODEL_MATH, prompt)
 
 
 def ask_ollama_summary(prompt: str) -> str:
-    """
-    Summary engine → single-shot → /api/generate
-    """
-    # Force JSON output for stability
     json_prompt = f"""
 Respond ONLY in valid JSON:
 
@@ -156,7 +146,4 @@ CHAPTER TEXT:
 
 
 def ask_ollama_chat(prompt: str) -> str:
-    """
-    AI Tutor → multi-turn → /api/chat
-    """
     return _call_chat(OLLAMA_MODEL_MATH, prompt)

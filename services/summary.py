@@ -1,23 +1,30 @@
 # services/summary.py
 
-from utils.model_router import ask_model
+import json
+from utils.ollama_client import ask_ollama_summary
 
 
 def summarize_chapter(text: str) -> str:
     """
     Summarize a chapter into clear, structured notes.
-    Uses the router so long prompts go to llama3 and avoid timeouts.
+    Uses the new /api/generate summary engine.
+    Ensures JSON-safe output and prevents blank UI.
     """
 
-    # Safety: trim extremely long input
     max_chars = 4000
     if len(text) > max_chars:
         text = text[:max_chars]
 
-    prompt = (
-        "You are an expert CBSE math teacher.\n"
-        "Summarize the following chapter into clear, structured notes with headings and bullet points.\n\n"
-        f"{text}"
-    )
+    raw = ask_ollama_summary(text)
 
-    return ask_model(prompt, task="summary")
+    # Try JSON parsing safely
+    try:
+        data = json.loads(raw)
+        if isinstance(data, dict) and "summary" in data:
+            return data["summary"].strip()
+    except json.JSONDecodeError:
+        pass
+    except Exception:
+        pass
+
+    return raw.strip()
