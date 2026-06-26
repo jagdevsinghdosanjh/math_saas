@@ -8,39 +8,70 @@ from utils.config import (
 )
 
 # ============================================================
-# INTERNAL LOW-LEVEL CALL (FULLY PATCHED)
+# INTERNAL HELPERS
 # ============================================================
 
-def _call_ollama(model: str, prompt: str) -> str:
+def _safe_parse_ollama_response(response_text: str):
     """
-    Robust Ollama API call.
     Handles:
     - normal JSON
     - streaming JSON (multiple lines)
-    - plain text responses
-    - safe fallbacks
+    - plain text fallback
     """
+    text = response_text.strip()
 
+    # 1) Try direct JSON
+    try:
+        data = json.loads(text)
+        if isinstance(data, dict):
+            if "message" in data and "content" in data["message"]:
+                return data["message"]["content"].strip()
+            if "response" in data:
+                return data["response"].strip()
+    except:
+        pass
+
+    # 2) Try streaming JSON (line-by-line)
+    for line in text.splitlines():
+        try:
+            data = json.loads(line)
+            if "message" in data and "content" in data["message"]:
+                return data["message"]["content"].strip()
+            if "response" in data:
+                return data["response"].strip()
+        except:
+            continue
+
+    # 3) Fallback: return raw text
+    return text
+
+
+# ============================================================
+# LOW-LEVEL CALLS
+# ============================================================
+
+def _call_chat(model: str, prompt: str) -> str:
+    """
+    Uses /api/chat (multi-turn chat style)
+    """
     if not USE_OLLAMA:
         return "Ollama disabled in config.py"
 
     payload = {
         "model": model,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
+        "messages": [{"role": "user", "content": prompt}],
         "stream": False
     }
 
     try:
-        print("\n================ OLLAMA DEBUG ================")
-        print(f"URL: {OLLAMA_URL}")
+        print("\n================ OLLAMA CHAT DEBUG ================")
+        print(f"URL: {OLLAMA_URL}/api/chat")
         print(f"MODEL: {model}")
         print(f"PROMPT: {prompt[:200]}...")
         print("Sending request...")
 
         response = requests.post(
-            OLLAMA_URL,
+            f"{OLLAMA_URL}/api/chat",
             json=payload,
             timeout=30
         )
@@ -48,66 +79,84 @@ def _call_ollama(model: str, prompt: str) -> str:
         print(f"STATUS CODE: {response.status_code}")
         response.raise_for_status()
 
-        raw_text = response.text.strip()
-        print("RAW TEXT RESPONSE:", raw_text[:500])
+        raw = response.text
+        print("RAW CHAT RESPONSE:", raw[:500])
 
-        # ----------------------------------------------------
-        # 1) Try direct JSON
-        # ----------------------------------------------------
-        try:
-            data = response.json()
-            print("PARSED JSON:", json.dumps(data, indent=2)[:500])
-
-            if "message" in data and "content" in data["message"]:
-                return data["message"]["content"].strip()
-
-            if "response" in data:
-                return data["response"].strip()
-
-        except json.JSONDecodeError:
-            pass  # Continue to streaming/line-by-line parsing
-
-        # ----------------------------------------------------
-        # 2) Try streaming JSON (line-by-line)
-        # ----------------------------------------------------
-        for line in raw_text.splitlines():
-            try:
-                data = json.loads(line)
-
-                if "message" in data and "content" in data["message"]:
-                    return data["message"]["content"].strip()
-
-                if "response" in data:
-                    return data["response"].strip()
-
-            except json.JSONDecodeError:
-                continue
-
-        # ----------------------------------------------------
-        # 3) Fallback: return raw text
-        # ----------------------------------------------------
-        return raw_text
-
-    except requests.exceptions.Timeout:
-        return "Error: Ollama request timed out (30s)."
-
-    except requests.exceptions.ConnectionError as e:
-        return f"Connection Error: {str(e)}"
-
-    except requests.exceptions.HTTPError as e:
-        return f"HTTP Error: {str(e)}"
+        return _safe_parse_ollama_response(raw)
 
     except Exception as e:
-        return f"Unexpected Error: {str(e)}"
+        return f"Chat Error: {str(e)}"
+
+
+def _call_generate(model: str, prompt: str) -> str:
+    """
+    Uses /api/generate (single-shot generation)
+    """
+    if not USE_OLLAMA:
+        return "Ollama disabled in config.py"
+
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False
+    }
+
+    try:
+        print("\n================ OLLAMA GENERATE DEBUG ================")
+        print(f"URL: {OLLAMA_URL}/api/generate")
+        print(f"MODEL: {model}")
+        print(f"PROMPT: {prompt[:200]}...")
+        print("Sending request...")
+
+        response = requests.post(
+            f"{OLLAMA_URL}/api/generate",
+            json=payload,
+            timeout=30
+        )
+
+        print(f"STATUS CODE: {response.status_code}")
+        response.raise_for_status()
+
+        raw = response.text
+        print("RAW GENERATE RESPONSE:", raw[:500])
+
+        return _safe_parse_ollama_response(raw)
+
+    except Exception as e:
+        return f"Generate Error: {str(e)}"
 
 
 # ============================================================
-# PUBLIC FUNCTIONS
+# PUBLIC FUNCTIONS (CLEAN API FOR YOUR APP)
 # ============================================================
 
 def ask_ollama_math(prompt: str) -> str:
-    return _call_ollama(OLLAMA_MODEL_MATH, prompt)
+    """
+    Math engine → single-shot reasoning → /api/generate
+    """
+    return _call_generate(OLLAMA_MODEL_MATH, prompt)
 
 
 def ask_ollama_summary(prompt: str) -> str:
-    return _call_ollama(OLLAMA_MODEL_SUMMARY, prompt)
+    """
+    Summary engine → single-shot → /api/generate
+    """
+    # Force JSON output for stability
+    json_prompt = f"""
+Respond ONLY in valid JSON:
+
+{{
+  "summary": ""
+}}
+
+CHAPTER TEXT:
+{prompt}
+"""
+    return _call_generate(OLLAMA_MODEL_SUMMARY, json_prompt)
+
+
+def ask_ollama_chat(prompt: str) -> str:
+    """
+    AI Tutor → multi-turn → /api/chat
+    """
+    return _call_chat(OLLAMA_MODEL_MATH, prompt)
