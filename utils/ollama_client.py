@@ -1,134 +1,96 @@
+# utils/ollama_client.py
+
 import requests
 import json
 from utils.config import (
     OLLAMA_URL,
     OLLAMA_MODEL_MATH,
     OLLAMA_MODEL_SUMMARY,
-    USE_OLLAMA
+    OLLAMA_MODEL_QUESTIONS,
 )
 
+TIMEOUT = 90
+RETRIES = 2
+
+
 # ============================================================
-# INTERNAL HELPERS
+# SAFE PARSER
 # ============================================================
 
-def _safe_parse_ollama_response(response_text: str):
+def _safe_parse(text: str) -> str:
     """
-    Handles:
-    - normal JSON
-    - streaming JSON (multiple lines)
-    - plain text fallback
+    Always returns a string.
+    Attempts:
+    1. Direct JSON
+    2. Streaming JSON
+    3. Raw text fallback
     """
-    text = response_text.strip()
 
-    # 1) Try direct JSON
+    cleaned = text.strip()
+
+    # Try direct JSON
     try:
-        data = json.loads(text)
+        data = json.loads(cleaned)
         if isinstance(data, dict):
             if "message" in data and "content" in data["message"]:
-                return data["message"]["content"].strip()
+                return str(data["message"]["content"]).strip()
             if "response" in data:
-                return data["response"].strip()
+                return str(data["response"]).strip()
     except json.JSONDecodeError:
         pass
 
-    # 2) Try streaming JSON
-    for line in text.splitlines():
+    # Try streaming JSON
+    for line in cleaned.splitlines():
         try:
             data = json.loads(line)
             if "message" in data and "content" in data["message"]:
-                return data["message"]["content"].strip()
+                return str(data["message"]["content"]).strip()
             if "response" in data:
-                return data["response"].strip()
+                return str(data["response"]).strip()
         except json.JSONDecodeError:
             continue
 
-    return text
+    # Fallback: return raw text
+    return cleaned
 
 
 # ============================================================
-# LOW-LEVEL CALLS
+# HTTP POST WRAPPER (ALWAYS RETURNS str)
 # ============================================================
 
-def _call_chat(model: str, prompt: str) -> str:
-    if not USE_OLLAMA:
-        return "Ollama disabled in config.py"
+def _post(url: str, payload: dict) -> str:
+    """
+    Sends POST request with retry logic.
+    ALWAYS returns a string (never None).
+    """
 
-    payload = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "stream": False
-    }
+    for attempt in range(RETRIES):
+        try:
+            response = requests.post(url, json=payload, timeout=TIMEOUT)
+            response.raise_for_status()
+            return _safe_parse(response.text)
 
-    try:
-        print("\n================ OLLAMA CHAT DEBUG ================")
-        print(f"URL: {OLLAMA_URL}/api/chat")
-        print(f"MODEL: {model}")
-        print(f"PROMPT: {prompt[:200]}...")
-        print("Sending request...")
+        except requests.exceptions.Timeout:
+            if attempt == RETRIES - 1:
+                return "Error: Model timed out."
 
-        response = requests.post(
-            f"{OLLAMA_URL}/api/chat",
-            json=payload,
-            timeout=180
-        )
+        except Exception as e:
+            if attempt == RETRIES - 1:
+                return f"Error: {str(e)}"
 
-        print(f"STATUS CODE: {response.status_code}")
-        response.raise_for_status()
-
-        raw = response.text
-        print("RAW CHAT RESPONSE:", raw[:500])
-
-        return _safe_parse_ollama_response(raw)
-
-    except requests.exceptions.RequestException as e:
-        return f"Chat Error: {str(e)}"
-    except Exception as e:
-        return f"Chat Unexpected Error: {str(e)}"
-
-
-def _call_generate(model: str, prompt: str) -> str:
-    if not USE_OLLAMA:
-        return "Ollama disabled in config.py"
-
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "stream": False
-    }
-
-    try:
-        print("\n================ OLLAMA GENERATE DEBUG ================")
-        print(f"URL: {OLLAMA_URL}/api/generate")
-        print(f"MODEL: {model}")
-        print(f"PROMPT: {prompt[:200]}...")
-        print("Sending request...")
-
-        response = requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json=payload,
-            timeout=30
-        )
-
-        print(f"STATUS CODE: {response.status_code}")
-        response.raise_for_status()
-
-        raw = response.text
-        print("RAW GENERATE RESPONSE:", raw[:500])
-
-        return _safe_parse_ollama_response(raw)
-
-    except requests.exceptions.RequestException as e:
-        return f"Generate Error: {str(e)}"
-    except Exception as e:
-        return f"Generate Unexpected Error: {str(e)}"
+    # Should never reach here, but return string anyway
+    return "Error: Unknown failure."
 
 
 # ============================================================
-# PUBLIC FUNCTIONS
+# PUBLIC FUNCTIONS (ALWAYS RETURN str)
 # ============================================================
 
 def ask_ollama_math(prompt: str) -> str:
-    return _call_generate(OLLAMA_MODEL_MATH, prompt)
+    return _post(
+        f"{OLLAMA_URL}/api/generate",
+        {"model": OLLAMA_MODEL_MATH, "prompt": prompt, "stream": False},
+    )
 
 
 def ask_ollama_summary(prompt: str) -> str:
@@ -142,8 +104,25 @@ Respond ONLY in valid JSON:
 CHAPTER TEXT:
 {prompt}
 """
-    return _call_generate(OLLAMA_MODEL_SUMMARY, json_prompt)
+    return _post(
+        f"{OLLAMA_URL}/api/generate",
+        {"model": OLLAMA_MODEL_SUMMARY, "prompt": json_prompt, "stream": False},
+    )
+
+
+def ask_ollama_questions(prompt: str) -> str:
+    return _post(
+        f"{OLLAMA_URL}/api/generate",
+        {"model": OLLAMA_MODEL_QUESTIONS, "prompt": prompt, "stream": False},
+    )
 
 
 def ask_ollama_chat(prompt: str) -> str:
-    return _call_chat(OLLAMA_MODEL_MATH, prompt)
+    return _post(
+        f"{OLLAMA_URL}/api/chat",
+        {
+            "model": OLLAMA_MODEL_MATH,
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": False,
+        },
+    )
