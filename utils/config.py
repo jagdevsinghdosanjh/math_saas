@@ -2,7 +2,7 @@
 
 USE_OLLAMA = True
 
-OLLAMA_URL = "https://ollama.jsdmath.in/api/generate"
+OLLAMA_URL = "https://ollama.jsdmath.in/api/chat"
 
 # Models (must be installed on your server)
 OLLAMA_MODEL_MATH = "deepseek-r1:1.5b"
