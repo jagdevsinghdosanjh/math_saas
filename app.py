@@ -10,39 +10,8 @@ from student.student_app import run_student
 from student.public_content import render_public_content
 from student.signup_page import render_signup_page
 from utils.db import get_supabase
-from utils.health import health_check
 
 st.set_page_config(page_title="Math Hub", page_icon="📘", layout="wide")
-
-
-# -------------------------------------------------
-# HEALTH PAGE
-# -------------------------------------------------
-def show_health_page():
-    st.title("🔍 System Health Monitor")
-
-    results = health_check()
-
-    st.subheader("Ollama API")
-    st.write("Local API:", "🟢 OK" if results["local_api"] else "🔴 DOWN")
-    st.write("Tunnel API:", "🟢 OK" if results["tunnel_api"] else "🔴 DOWN")
-
-    st.subheader("Models")
-    st.write(
-        "DeepSeek 1.5B:",
-        "🟢 OK" if results["deepseek_1_5b"] else "🔴 DOWN",
-        f"({results['deepseek_1_5b_latency']} ms)",
-    )
-    st.write(
-        "DeepSeek 7B:",
-        "🟢 OK" if results["deepseek_7b"] else "🔴 DOWN",
-        f"({results['deepseek_7b_latency']} ms)",
-    )
-    st.write(
-        "Llama 3.2:",
-        "🟢 OK" if results["llama_3_2"] else "🔴 DOWN",
-        f"({results['llama_3_2_latency']} ms)",
-    )
 
 
 # -------------------------------------------------
@@ -93,6 +62,7 @@ def handle_login(email: str, password: str, role: str):
 # -------------------------------------------------
 def admin_login_form():
     st.markdown("<h3>Admin Login</h3>", unsafe_allow_html=True)
+
     email = st.text_input("Email", key="admin_email")
     password = st.text_input("Password", type="password", key="admin_pass")
 
@@ -111,6 +81,7 @@ def admin_login_form():
 # -------------------------------------------------
 def student_login_form():
     st.markdown("<h3>Student Login</h3>", unsafe_allow_html=True)
+
     email = st.text_input("Email", key="student_email")
     password = st.text_input("Password", type="password", key="student_pass")
 
@@ -143,18 +114,6 @@ def main():
     )
 
     apply_light_theme() if theme_choice == "Light" else apply_dark_theme()
-
-    # Sidebar navigation
-    st.sidebar.title("Navigation")
-    nav = st.sidebar.radio(
-        "Go to:",
-        ["Home", "Health Monitor"],
-        index=0,
-    )
-
-    if nav == "Health Monitor":
-        show_health_page()
-        return
 
     # Role-based routing
     role = st.session_state.get("role")
