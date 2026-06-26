@@ -69,7 +69,7 @@ def _call_chat(model: str, prompt: str) -> str:
         response = requests.post(
             f"{OLLAMA_URL}/api/chat",
             json=payload,
-            timeout=30
+            timeout=180
         )
 
         print(f"STATUS CODE: {response.status_code}")
