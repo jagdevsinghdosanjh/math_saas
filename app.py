@@ -1,35 +1,69 @@
 import streamlit as st
-from typing import Dict
+
 from auth import (
     restore_session,
-    logout,
     apply_dark_theme,
     apply_light_theme,
-    set_logged_in_user,
 )
 from admin.admin_app import run_admin
 from student.student_app import run_student
 from student.public_content import render_public_content
 from student.signup_page import render_signup_page
 from utils.db import get_supabase
+from utils.health import health_check
 
 st.set_page_config(page_title="Math Hub", page_icon="📘", layout="wide")
+
+
+# -------------------------------------------------
+# HEALTH PAGE
+# -------------------------------------------------
+def show_health_page():
+    st.title("🔍 System Health Monitor")
+
+    results = health_check()
+
+    st.subheader("Ollama API")
+    st.write("Local API:", "🟢 OK" if results["local_api"] else "🔴 DOWN")
+    st.write("Tunnel API:", "🟢 OK" if results["tunnel_api"] else "🔴 DOWN")
+
+    st.subheader("Models")
+    st.write(
+        "DeepSeek 1.5B:",
+        "🟢 OK" if results["deepseek_1_5b"] else "🔴 DOWN",
+        f"({results['deepseek_1_5b_latency']} ms)",
+    )
+    st.write(
+        "DeepSeek 7B:",
+        "🟢 OK" if results["deepseek_7b"] else "🔴 DOWN",
+        f"({results['deepseek_7b_latency']} ms)",
+    )
+    st.write(
+        "Llama 3.2:",
+        "🟢 OK" if results["llama_3_2"] else "🔴 DOWN",
+        f"({results['llama_3_2_latency']} ms)",
+    )
+
+
 # -------------------------------------------------
 # GENERIC LOGIN HANDLER
 # -------------------------------------------------
 def handle_login(email: str, password: str, role: str):
     sb = get_supabase()
+
     try:
         res = sb.auth.sign_in_with_password({"email": email, "password": password})
     except Exception:
         st.error("Invalid login credentials")
         return None, None
+
     user = res.user
     session = res.session
+
     if not user or not session or not session.access_token:
         st.error("Invalid login credentials")
         return None, None
-    # Fetch profile
+
     profile_raw = (
         sb.table("profiles")
         .select("*")
@@ -38,17 +72,22 @@ def handle_login(email: str, password: str, role: str):
         .execute()
         .data
     )
+
     if not isinstance(profile_raw, dict):
         st.error("Profile not found.")
         return None, None
-    # Role validation
+
     if role == "admin" and not profile_raw.get("is_admin", False):
         st.error("You are not an admin.")
         return None, None
+
     if role == "student" and profile_raw.get("is_admin", False):
         st.error("Students must login from Student Login.")
         return None, None
+
     return profile_raw, session
+
+
 # -------------------------------------------------
 # ADMIN LOGIN FORM
 # -------------------------------------------------
@@ -84,25 +123,40 @@ def student_login_form():
             st.session_state["refresh_token"] = session.refresh_token
             st.rerun()
 
+
+# -------------------------------------------------
+# MAIN ROUTER
+# -------------------------------------------------
 def main():
     restore_session()
 
-    # Allow Razorpay redirect to load checkout page
+    # Razorpay redirect
     if st.query_params.get("page") == "razorpay_checkout":
         st.switch_page("pages/razorpay_checkout.py")
         return
 
+    # Theme selection
     theme_choice = st.radio(
         "Choose Theme:",
         ["Dark (Neon)", "Light"],
         horizontal=True,
     )
 
-    if theme_choice == "Light":
-        apply_light_theme()
-    else:
-        apply_dark_theme()
+    apply_light_theme() if theme_choice == "Light" else apply_dark_theme()
 
+    # Sidebar navigation
+    st.sidebar.title("Navigation")
+    nav = st.sidebar.radio(
+        "Go to:",
+        ["Home", "Health Monitor"],
+        index=0,
+    )
+
+    if nav == "Health Monitor":
+        show_health_page()
+        return
+
+    # Role-based routing
     role = st.session_state.get("role")
 
     if role == "admin":
@@ -113,6 +167,7 @@ def main():
         run_student()
         return
 
+    # Public landing page
     st.markdown("<h2>Welcome to Student's Math Companion</h2>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
@@ -143,6 +198,7 @@ def main():
 
     st.markdown("<hr>", unsafe_allow_html=True)
     render_public_content()
+
 
 if __name__ == "__main__":
     main()

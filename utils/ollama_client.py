@@ -5,6 +5,7 @@ import json
 from utils.config import (
     OLLAMA_URL,
     OLLAMA_MODEL_MATH,
+    OLLAMA_MODEL_MATH_HEAVY,
     OLLAMA_MODEL_SUMMARY,
     OLLAMA_MODEL_QUESTIONS,
 )
@@ -90,6 +91,12 @@ def ask_ollama_math(prompt: str) -> str:
     return _post(
         f"{OLLAMA_URL}/api/generate",
         {"model": OLLAMA_MODEL_MATH, "prompt": prompt, "stream": False},
+    )
+
+def ask_ollama_math_heavy(prompt: str) -> str:
+        return _post(
+        f"{OLLAMA_URL}/api/generate",
+        {"model": OLLAMA_MODEL_MATH_HEAVY, "prompt": prompt, "stream": False},
     )
 
 
