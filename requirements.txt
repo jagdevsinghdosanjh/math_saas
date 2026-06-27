@@ -6,3 +6,4 @@ streamlit-cookies-manager
 fastapi
 uvicorn
 openai
+psutil
