@@ -20,7 +20,7 @@ from admin.settings import render as render_settings
 # HEALTH MONITOR PAGE (Unified: API + Local Dashboard)
 # -------------------------------------------------
 def render_health_monitor() -> None:
-    st.title("🔍 System Health Monitor")
+    st.title("🔍 System Health")
 
     # Auto-refresh toggle
     auto_refresh = st.checkbox("Auto-refresh every 10 seconds", value=False)
