@@ -1,5 +1,6 @@
 # utils/health.py
 import streamlit as st
+import json
 import psutil
 import requests
 import pandas as pd
@@ -18,17 +19,23 @@ TIMEOUT = 25 #insted of 8 for heavy_math_model to respond correctly
 def host_ram_monitor():
     """
     Returns actual Windows host RAM (Total, Used, Free) in GB.
-    Works even if Streamlit is running inside WSL/Docker/Linux.
+    Uses PowerShell (WMIC is deprecated).
+    Works even if Streamlit runs inside WSL/Docker.
     """
     try:
-        # Query Windows RAM using WMIC
-        cmd = 'wmic OS get TotalVisibleMemorySize,FreePhysicalMemory /format:value'
-        output = subprocess.check_output(cmd, shell=True).decode().strip()
+        cmd = [
+            "powershell",
+            "-Command",
+            "(Get-CimInstance Win32_OperatingSystem | "
+            "Select-Object TotalVisibleMemorySize,FreePhysicalMemory | "
+            "ConvertTo-Json)"
+        ]
 
-        values = dict(line.split('=') for line in output.splitlines())
+        output = subprocess.check_output(cmd, shell=False).decode().strip()
+        data = json.loads(output)
 
-        total_gb = int(values['TotalVisibleMemorySize']) / 1024 / 1024
-        free_gb = int(values['FreePhysicalMemory']) / 1024 / 1024
+        total_gb = int(data["TotalVisibleMemorySize"]) / 1024 / 1024
+        free_gb = int(data["FreePhysicalMemory"]) / 1024 / 1024
         used_gb = total_gb - free_gb
 
         return {
