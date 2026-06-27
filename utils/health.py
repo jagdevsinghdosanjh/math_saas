@@ -38,11 +38,12 @@ def health_check():
     results: dict[str, bool | int | None] = {}
 
     # 1. Local API
-    # try:
-    #     r = requests.get("http://localhost:11434/api/tags", timeout=TIMEOUT)
-    #     results["local_api"] = r.status_code == 200
-    # except (RequestException, Timeout):
-    #     results["local_api"] = False
+    try:
+        r = requests.get("https://ollama.jsdmath.in/api/tags", timeout=TIMEOUT)
+        # r = requests.get("http://localhost:11434/api/tags", timeout=TIMEOUT)
+        results["local_api"] = r.status_code == 200
+    except (RequestException, Timeout):
+        results["local_api"] = False
 
     # 2. Tunnel API
     try:
