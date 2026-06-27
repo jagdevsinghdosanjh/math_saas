@@ -18,18 +18,18 @@ def get_supabase():
 # ---------------------------------------------------------
 def _get_cbse_9th_math_chapters() -> List[Dict[str, str]]:
     chapters = [
-        "Chapter 1 - Number Systems",
-        "Chapter 2 - Polynomials",
-        "Chapter 3 - Coordinate Geometry",
-        "Chapter 4 - Linear Equations in Two Variables",
-        "Chapter 5 - Introduction to Euclid's Geometry",
-        "Chapter 6 - Lines and Angles",
-        "Chapter 7 - Triangles",
-        "Chapter 8 - Quadrilaterals",
-        "Chapter 9 - Circles",
-        "Chapter 10 - Heron's Formula",
-        "Chapter 11 - Surface Areas and Volumes",
-        "Chapter 12 - Statistics",
+        "Chapter 1 - Number Systems(9th)",
+        "Chapter 2 - Polynomials(9th)",
+        "Chapter 3 - Coordinate Geometry(9th)",
+        "Chapter 4 - Linear Equations in Two Variables(9th)",
+        "Chapter 5 - Introduction to Euclid's Geometry(9th)",
+        "Chapter 6 - Lines and Angles(9th)",
+        "Chapter 7 - Triangles(9th)",
+        "Chapter 8 - Quadrilaterals(9th)",
+        "Chapter 9 - Circles(9th)",
+        "Chapter 10 - Heron's Formula(9th)",
+        "Chapter 11 - Surface Areas and Volumes(9th)",
+        "Chapter 12 - Statistics(9th)",
     ]
 
     return [
@@ -45,21 +45,21 @@ def _get_cbse_9th_math_chapters() -> List[Dict[str, str]]:
 
 def _get_cbse_10th_math_chapters() -> List[Dict[str, str]]:
     chapters = [
-        "Chapter 1 - Real Numbers",
-        "Chapter 2 - Polynomials",
-        "Chapter 3 - Pair of Linear Equations in Two Variables",
-        "Chapter 4 - Quadratic Equations",
-        "Chapter 5 - Arithmetic Progression",
-        "Chapter 6 - Coordinate Geometry",
-        "Chapter 7 - Triangles",
-        "Chapter 8 - Circles",
-        "Chapter 9 - Introduction to Geometry",
-        "Chapter 10 - Trigonometric Identities",
-        "Chapter 11 - Heights and Distances: Angle of Elevation, Angle of Depression",
-        "Chapter 12 - Areas Related to Circles",
-        "Chapter 13 - Surface Areas and Volumes",
-        "Chapter 14 - Statistics",
-        "Chapter 15 - Probability",
+        "Chapter 1 - Real Numbers (10th)",
+        "Chapter 2 - Polynomials(10th)",
+        "Chapter 3 - Pair of Linear Equations in Two Variables(10th)",
+        "Chapter 4 - Quadratic Equations(10th)",
+        "Chapter 5 - Arithmetic Progression(10th)",
+        "Chapter 6 - Coordinate Geometry(10th)",
+        "Chapter 7 - Triangles(10th)",
+        "Chapter 8 - Circles(10th)",
+        "Chapter 9 - Introduction to Geometry(10th)",
+        "Chapter 10 - Trigonometric Identities(10th)",
+        "Chapter 11 - Heights and Distances: AOE & AOD(10th)",
+        "Chapter 12 - Areas Related to Circles(10th)",
+        "Chapter 13 - Surface Areas and Volumes(10th)",
+        "Chapter 14 - Statistics(10th)",
+        "Chapter 15 - Probability(10th)",
     ]
 
     return [
