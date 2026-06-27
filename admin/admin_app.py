@@ -129,7 +129,7 @@ def render_health_monitor() -> None:
     # -------------------------------------------------
     # 2. LOCAL SYSTEM DASHBOARD (from utils.health)
     # -------------------------------------------------
-    st.markdown("## 🖥️ Dell Rhino Status")
+    st.markdown("## 🖥️ Rhino Status")
     run_health_monitor()
 
 
