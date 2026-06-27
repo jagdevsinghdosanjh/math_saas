@@ -1,7 +1,9 @@
 # utils/health.py
-
-import time
+import streamlit as st
+import psutil
 import requests
+import pandas as pd
+import time
 from requests.exceptions import RequestException, Timeout
 from utils.config import (
     OLLAMA_URL,
@@ -11,6 +13,73 @@ from utils.config import (
 )
 
 TIMEOUT = 25 #insted of 8 for heavy_math_model to respond correctly
+
+def run_health_monitor():
+    st.title("🖥️ System Health Monitor")
+    st.caption("Local RAM, CPU, and Ollama Model Status")
+
+    # --- SYSTEM METRICS ---
+    ram = psutil.virtual_memory()
+    cpu = psutil.cpu_percent(interval=1)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric("Total RAM", f"{ram.total / (1024**3):.2f} GB")
+        st.metric("Used RAM", f"{ram.used / (1024**3):.2f} GB")
+        st.metric("Free RAM", f"{ram.available / (1024**3):.2f} GB")
+
+    with col2:
+        st.metric("CPU Usage", f"{cpu}%")
+        st.metric("Processes Running", len(psutil.pids()))
+
+    st.divider()
+
+    # --- MODEL STATUS ---
+    st.subheader("📦 Loaded Models")
+
+    try:
+        data = requests.get("https://ollama.jsdmath.in/api/ps", timeout=2).json()
+        models = data.get("models", [])
+    except Exception as e:
+        print(f"Health check error: {e}")
+
+        models = []
+
+    if not models:
+        st.error("No models loaded in RAM")
+    else:
+        df = pd.DataFrame([
+            {
+                "Model": m["name"],
+                "Size (GB)": m["size"] / (1024**3),
+                "Context Length": m["details"].get("context_length", 4096),
+                "Expires At": m.get("expires_at", "N/A")
+            }
+            for m in models
+        ])
+        st.dataframe(df, use_container_width=True)
+
+    st.divider()
+
+    # --- PROCESS TABLE ---
+    st.subheader("⚙️ Ollama Processes")
+
+    processes = []
+    for p in psutil.process_iter(['pid', 'name', 'memory_info', 'cpu_percent']):
+        if "ollama" in p.info['name'].lower():
+            processes.append({
+                "PID": p.info['pid'],
+                "CPU %": p.info['cpu_percent'],
+                "RAM (MB)": p.info['memory_info'].rss / (1024**2)
+            })
+
+    if processes:
+        st.dataframe(pd.DataFrame(processes), use_container_width=True)
+    else:
+        st.warning("No Ollama processes detected")
+
+    st.info("Auto-refresh every 5 seconds")
 
 
 def check_endpoint(url: str, payload: dict):
