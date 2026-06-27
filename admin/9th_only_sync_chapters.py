@@ -1,6 +1,6 @@
 import requests
 import streamlit as st
-from typing import List, Dict
+from typing import List, Dict #Any ommitted
 from supabase import create_client
 
 
@@ -14,7 +14,7 @@ def get_supabase():
 
 
 # ---------------------------------------------------------
-# STATIC CHAPTER SOURCES
+# STATIC CHAPTER SOURCE (CAN BE EXTENDED LATER)
 # ---------------------------------------------------------
 def _get_cbse_9th_math_chapters() -> List[Dict[str, str]]:
     chapters = [
@@ -43,36 +43,6 @@ def _get_cbse_9th_math_chapters() -> List[Dict[str, str]]:
     ]
 
 
-def _get_cbse_10th_math_chapters() -> List[Dict[str, str]]:
-    chapters = [
-        "Chapter 1 - Real Numbers",
-        "Chapter 2 - Polynomials",
-        "Chapter 3 - Pair of Linear Equations in Two Variables",
-        "Chapter 4 - Quadratic Equations",
-        "Chapter 5 - Arithmetic Progression",
-        "Chapter 6 - Coordinate Geometry",
-        "Chapter 7 - Triangles",
-        "Chapter 8 - Circles",
-        "Chapter 9 - Introduction to Geometry",
-        "Chapter 10 - Trigonometric Identities",
-        "Chapter 11 - Heights and Distances: Angle of Elevation, Angle of Depression",
-        "Chapter 12 - Areas Related to Circles",
-        "Chapter 13 - Surface Areas and Volumes",
-        "Chapter 14 - Statistics",
-        "Chapter 15 - Probability",
-    ]
-
-    return [
-        {
-            "grade": "10",
-            "board": "CBSE",
-            "chapter_key": f"cbse10_{i+1}",
-            "chapter_name": ch,
-        }
-        for i, ch in enumerate(chapters)
-    ]
-
-
 # ---------------------------------------------------------
 # SYNC INTO MAIN CHAPTERS TABLE
 # ---------------------------------------------------------
@@ -82,18 +52,16 @@ def sync_chapters():
     # Optional: fetch HTML (future parsing)
     try:
         requests.get("https://jsdasr-math-cbse.vercel.app/9th-Math/index.html", timeout=10)
-        requests.get("https://jsdasr-math-cbse.vercel.app/10th-Math/index.html", timeout=10)
     except Exception:
-        pass
+        pass  # HTML not used yet, but kept for future scraping
 
-    chapters = []
-    chapters.extend(_get_cbse_9th_math_chapters())
-    chapters.extend(_get_cbse_10th_math_chapters())
+    chapters = _get_cbse_9th_math_chapters()
 
     inserted = 0
     skipped = 0
 
     for ch in chapters:
+        # Check if chapter already exists
         existing = (
             sb.table("chapters")
             .select("id")
