@@ -1,5 +1,4 @@
 import streamlit as st
-from typing import Any, Dict
 
 from auth import (
     require_student,
@@ -27,14 +26,14 @@ from services.summary import summarize_chapter
 # QUIZ CHAPTERS
 # ---------------------------------------------------------
 def render_quiz_chapters() -> None:
-    user: Dict[str, Any] = require_user()
+    require_user()  # user validation only
     sb = get_supabase()
 
     try:
         res = (
             sb.table("chapters")
             .select("id, grade, board, chapter_key, chapter_name")
-            .order("grade", desc=False)
+            .order("grade", desc=True)
             .execute()
         )
         chapters = res.data or []
@@ -67,17 +66,14 @@ def render_quiz_chapters() -> None:
                 unsafe_allow_html=True,
             )
 
-
 # ---------------------------------------------------------
 # MAIN STUDENT APP
 # ---------------------------------------------------------
 def run_student() -> None:
     app_container_style()
 
-    user: Dict[str, Any] = require_user()
+    require_user()
     require_student()
-
-    sb = get_supabase()
 
     # ---------------------------------------------------------
     # LOGOUT HANDLER
