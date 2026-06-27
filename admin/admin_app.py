@@ -142,7 +142,7 @@ def render_health_monitor() -> None:
         #st.error("Unable to read host RAM:",f"{ram['error']}GB")
 
     run_health_monitor()
-
+    host_ram_monitor()
 # -------------------------------------------------
 # ADMIN SYNC BUTTON
 # -------------------------------------------------
