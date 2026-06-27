@@ -10,7 +10,7 @@ from utils.config import (
     OLLAMA_MODEL_SUMMARY,
 )
 
-TIMEOUT = 8
+TIMEOUT = 25 #insted of 8 for heavy_math_model to respond correctly
 
 
 def check_endpoint(url: str, payload: dict):
@@ -55,7 +55,7 @@ def health_check():
     # 3. DeepSeek 1.5B
     ok, latency = check_endpoint(
         f"{OLLAMA_URL}/api/generate",
-        {"model": OLLAMA_MODEL_MATH, "prompt": "hi", "stream": False},
+        {"model": OLLAMA_MODEL_MATH, "prompt": ".", "stream": False},
     )
     results["deepseek_1_5b"] = ok
     results["deepseek_1_5b_latency"] = latency
