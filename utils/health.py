@@ -1,11 +1,9 @@
 # utils/health.py
 import streamlit as st
-import json
-import psutil
 import requests
+import psutil
 import pandas as pd
 import time
-import subprocess
 from requests.exceptions import RequestException, Timeout
 from utils.config import (
     OLLAMA_URL,
@@ -16,41 +14,30 @@ from utils.config import (
 
 TIMEOUT = 25 #insted of 8 for heavy_math_model to respond correctly
 
-def host_ram_monitor():
+def host_ram_monitor(base_url: str = "http://localhost:5055"):
     """
-    Returns actual Windows host RAM (Total, Used, Free) in GB.
-    Uses PowerShell (WMIC is deprecated).
-    Works even if Streamlit runs inside WSL/Docker.
+    Fetches host RAM from Windows RAM API bridge.
+    Returns dict with total_gb, used_gb, free_gb or error.
     """
     try:
-        cmd = [
-            "powershell",
-            "-Command",
-            "(Get-CimInstance Win32_OperatingSystem | "
-            "Select-Object TotalVisibleMemorySize,FreePhysicalMemory | "
-            "ConvertTo-Json)"
-        ]
-
-        output = subprocess.check_output(cmd, shell=False).decode().strip()
-        data = json.loads(output)
-
-        total_gb = int(data["TotalVisibleMemorySize"]) / 1024 / 1024
-        free_gb = int(data["FreePhysicalMemory"]) / 1024 / 1024
-        used_gb = total_gb - free_gb
+        resp = requests.get(f"{base_url}/ram", timeout=3)
+        resp.raise_for_status()
+        data = resp.json()
 
         return {
-            "total_gb": round(total_gb, 2),
-            "used_gb": round(used_gb, 2),
-            "free_gb": round(free_gb, 2)
+            "total_gb": data.get("total_gb"),
+            "used_gb": data.get("used_gb"),
+            "free_gb": data.get("free_gb"),
         }
-
     except Exception as e:
         return {
             "error": str(e),
             "total_gb": None,
             "used_gb": None,
-            "free_gb": None
+            "free_gb": None,
         }
+
+
 def run_health_monitor():
     st.title("System Health Monitor - Of Container")
     st.caption("Local RAM, CPU, and Ollama Model Status")
