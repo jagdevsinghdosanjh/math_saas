@@ -28,7 +28,9 @@ from services.summary import summarize_chapter
 # ---------------------------------------------------------
 def render_quiz_chapters() -> None:
     user=require_user()
-    student_name = user.get("full_name", "").replace(" ", "%20")
+    meta = user.get("user_metadata", {})
+    student_name = meta.get("name", "").replace(" ", "%20")
+
     sb = get_supabase()
 
     try:
