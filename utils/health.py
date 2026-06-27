@@ -4,6 +4,7 @@ import psutil
 import requests
 import pandas as pd
 import time
+import subprocess
 from requests.exceptions import RequestException, Timeout
 from utils.config import (
     OLLAMA_URL,
@@ -14,6 +15,35 @@ from utils.config import (
 
 TIMEOUT = 25 #insted of 8 for heavy_math_model to respond correctly
 
+def host_ram_monitor():
+    """
+    Returns actual Windows host RAM (Total, Used, Free) in GB.
+    Works even if Streamlit is running inside WSL/Docker/Linux.
+    """
+    try:
+        # Query Windows RAM using WMIC
+        cmd = 'wmic OS get TotalVisibleMemorySize,FreePhysicalMemory /format:value'
+        output = subprocess.check_output(cmd, shell=True).decode().strip()
+
+        values = dict(line.split('=') for line in output.splitlines())
+
+        total_gb = int(values['TotalVisibleMemorySize']) / 1024 / 1024
+        free_gb = int(values['FreePhysicalMemory']) / 1024 / 1024
+        used_gb = total_gb - free_gb
+
+        return {
+            "total_gb": round(total_gb, 2),
+            "used_gb": round(used_gb, 2),
+            "free_gb": round(free_gb, 2)
+        }
+
+    except Exception as e:
+        return {
+            "error": str(e),
+            "total_gb": None,
+            "used_gb": None,
+            "free_gb": None
+        }
 def run_health_monitor():
     st.title("System Health Monitor - Of Container")
     st.caption("Local RAM, CPU, and Ollama Model Status")

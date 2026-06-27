@@ -3,7 +3,7 @@ import streamlit as st
 from auth import require_admin, logout, top_bar
 from admin.sync_chapters import sync_chapters
 
-from utils.health import health_check, run_health_monitor
+from utils.health import health_check, run_health_monitor,host_ram_monitor
 
 from admin.analytics import render as render_analytics
 from admin.subscriptions_admin import render as render_subscriptions
@@ -132,6 +132,15 @@ def render_health_monitor() -> None:
     st.markdown("# 🖥️ Rhino Host - Status ")
     st.markdown("""<img src="https://www.bing.com/th/id/OGC.9afbdaf05a62872709c05a0a0591af20?o=7&cb=thfc1falcon3&pid=1.7&rm=3&rurl=https%3a%2f%2fmedia1.tenor.com%2fm%2fAqzx4T3G940AAAAC%2frhino.gif&ehk=DEdKMwil8LUhGh0UPe7xKHnRcKUPYqYwx6sGind2%2bZw%3d" 
          width="60">Rhino Status""",unsafe_allow_html=True)
+    ram = host_ram_monitor()
+    if "error" not in ram:
+        st.metric("Host Total RAM", f"{ram['total_gb']} GB")
+        st.metric("Host Used RAM", f"{ram['used_gb']} GB")
+        st.metric("Host Free RAM", f"{ram['free_gb']} GB")
+    else:
+        st.error("Unable to read host RAM: " + str(ram["error"]))
+        #st.error("Unable to read host RAM:",f"{ram['error']}GB")
+
     run_health_monitor()
 
 # -------------------------------------------------
