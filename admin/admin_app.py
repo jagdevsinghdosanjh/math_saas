@@ -135,7 +135,7 @@ st.markdown(
          width="60"> Rhino Status""",
     unsafe_allow_html=True,
 )
-ram = host_ram_monitor(base_url="http://localhost:5055")  # or RHINO IP
+ram = host_ram_monitor(base_url="http://127.0.0.1:5055")  # or RHINO IP
 
 if "error" not in ram:
     st.metric("Host Total RAM", f"{ram['total_gb']} GB")
