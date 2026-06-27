@@ -27,7 +27,8 @@ from services.summary import summarize_chapter
 # QUIZ CHAPTERS
 # ---------------------------------------------------------
 def render_quiz_chapters() -> None:
-    require_user()
+    user=require_user()
+    student_name = user.get("full_name", "").replace(" ", "%20")
     sb = get_supabase()
 
     try:
@@ -75,7 +76,7 @@ def render_quiz_chapters() -> None:
 
             quiz_url = (
                 f"https://jsdasr-math-cbse.vercel.app/9th-Math/index.html?"
-                f"chapter={safe_title}"
+                f"chapter={safe_title}&name={student_name}"
             )
 
             with st.expander(title):
@@ -96,8 +97,9 @@ def render_quiz_chapters() -> None:
 
             quiz_url = (
                 f"https://jsdasr-math-cbse.vercel.app/10th-Math/index.html?"
-                f"chapter={safe_title}"
+                f"chapter={safe_title}&name={student_name}"
             )
+
 
             with st.expander(title):
                 st.write(f"Practice quizzes for **{title}**")
