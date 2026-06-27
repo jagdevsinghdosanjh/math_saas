@@ -118,7 +118,6 @@ def check_endpoint(url: str, payload: dict):
     except (RequestException, Timeout):
         return False, None
 
-
 def health_check():
     """
     Returns a dict with health status for:
