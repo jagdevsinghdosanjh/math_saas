@@ -1,4 +1,5 @@
 import streamlit as st
+from typing import Dict, List, Any
 
 from auth import (
     require_student,
@@ -26,45 +27,84 @@ from services.summary import summarize_chapter
 # QUIZ CHAPTERS
 # ---------------------------------------------------------
 def render_quiz_chapters() -> None:
-    require_user()  # user validation only
+    require_user()
     sb = get_supabase()
 
     try:
         res = (
-            sb.table("chapters")
-            .select("id, grade, board, chapter_key, chapter_name")
-            .order("grade", desc=True)
+            sb.table("sync_chapters")
+            .select("id, grade, chapter_title")
+            .order("grade", desc=False)
+            .order("id", desc=False)
             .execute()
         )
-        chapters = res.data or []
+        raw_data = res.data
     except Exception as exc:
-        st.error(f"Error fetching chapters: {exc}")
+        st.error(f"Error fetching quiz chapters: {exc}")
         return
+
+    # Ensure we always have a list
+    if not isinstance(raw_data, list):
+        st.info("No quiz chapters available yet.")
+        return
+
+    chapters = [ch for ch in raw_data if isinstance(ch, dict)]
 
     if not chapters:
-        st.info("No chapters available yet.")
+        st.info("No quiz chapters available yet.")
         return
 
-    st.subheader("📘 Chapters & Practice Quizzes")
+    st.subheader("📘 Class‑wise Practice Quizzes")
+
+    # Group chapters by grade
+    grouped: Dict[str, List[Dict[str, Any]]] = {"9": [], "10": []}
 
     for ch in chapters:
-        if not isinstance(ch, dict):
-            continue
+        grade = str(ch.get("grade", "")).strip()
+        if grade in grouped:
+            grouped[grade].append(ch)
 
-        title = ch.get("chapter_name", "Untitled")
-        chapter_key = ch.get("chapter_key", "")
+    # -------------------------
+    # CLASS 9
+    # -------------------------
+    if grouped["9"]:
+        st.markdown("## 🟦 Class 9")
+        for ch in grouped["9"]:
+            title = str(ch.get("chapter_title", "Untitled"))
+            safe_title = title.replace(" ", "%20")
 
-        quiz_url = (
-            "https://jsdasr-math-cbse.vercel.app/9th-Math/index.html?"
-            f"chapter={chapter_key}"
-        )
-
-        with st.expander(str(title or "Untitled")):
-            st.write(f"Practice quizzes for **{title}**")
-            st.markdown(
-                f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>',
-                unsafe_allow_html=True,
+            quiz_url = (
+                f"https://jsdasr-math-cbse.vercel.app/9th-Math/index.html?"
+                f"chapter={safe_title}"
             )
+
+            with st.expander(title):
+                st.write(f"Practice quizzes for **{title}**")
+                st.markdown(
+                    f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>',
+                    unsafe_allow_html=True,
+                )
+
+    # -------------------------
+    # CLASS 10
+    # -------------------------
+    if grouped["10"]:
+        st.markdown("## 🟥 Class 10")
+        for ch in grouped["10"]:
+            title = str(ch.get("chapter_title", "Untitled"))
+            safe_title = title.replace(" ", "%20")
+
+            quiz_url = (
+                f"https://jsdasr-math-cbse.vercel.app/10th-Math/index.html?"
+                f"chapter={safe_title}"
+            )
+
+            with st.expander(title):
+                st.write(f"Practice quizzes for **{title}**")
+                st.markdown(
+                    f'<a href="{quiz_url}" target="_blank"><button>Start Quiz</button></a>',
+                    unsafe_allow_html=True,
+                )
 
 # ---------------------------------------------------------
 # MAIN STUDENT APP
