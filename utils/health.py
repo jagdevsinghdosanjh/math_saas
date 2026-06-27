@@ -15,7 +15,7 @@ from utils.config import (
 TIMEOUT = 25 #insted of 8 for heavy_math_model to respond correctly
 
 def run_health_monitor():
-    st.title("System Health Monitor")
+    st.title("System Health Monitor - Of Container")
     st.caption("Local RAM, CPU, and Ollama Model Status")
 
     # --- SYSTEM METRICS ---

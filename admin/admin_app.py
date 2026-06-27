@@ -129,11 +129,10 @@ def render_health_monitor() -> None:
     # -------------------------------------------------
     # 2. LOCAL SYSTEM DASHBOARD (from utils.health)
     # -------------------------------------------------
-    st.markdown("# 🖥️ Rhino Status")
+    st.markdown("# 🖥️ Rhino Host - Status ")
     st.markdown("""<img src="https://www.bing.com/th/id/OGC.9afbdaf05a62872709c05a0a0591af20?o=7&cb=thfc1falcon3&pid=1.7&rm=3&rurl=https%3a%2f%2fmedia1.tenor.com%2fm%2fAqzx4T3G940AAAAC%2frhino.gif&ehk=DEdKMwil8LUhGh0UPe7xKHnRcKUPYqYwx6sGind2%2bZw%3d" 
          width="60">Rhino Status""",unsafe_allow_html=True)
     run_health_monitor()
-
 
 # -------------------------------------------------
 # ADMIN SYNC BUTTON
