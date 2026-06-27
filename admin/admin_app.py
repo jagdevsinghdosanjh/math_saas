@@ -1,8 +1,9 @@
 import streamlit as st
 
-from admin.sync_chapters import sync_chapters
 from auth import require_admin, logout, top_bar
-from utils.health import health_check
+from admin.sync_chapters import sync_chapters
+
+from utils.health import health_check, run_health_monitor
 
 from admin.analytics import render as render_analytics
 from admin.subscriptions_admin import render as render_subscriptions
@@ -14,11 +15,9 @@ from admin.videos import render as render_videos
 from admin.content_admin import render as render_content_admin
 from admin.settings import render as render_settings
 
-# NEW: Health Monitor
-
 
 # -------------------------------------------------
-# HEALTH MONITOR PAGE
+# HEALTH MONITOR PAGE (Unified: API + Local Dashboard)
 # -------------------------------------------------
 def render_health_monitor() -> None:
     st.title("🔍 System Health Monitor")
@@ -28,15 +27,17 @@ def render_health_monitor() -> None:
     if auto_refresh:
         st.rerun()
 
+    # -------------------------------------------------
+    # 1. API + MODEL LATENCY SECTION
+    # -------------------------------------------------
     results = health_check()
 
-    # -------------------------------
-    # Helper for colored badges
-    # -------------------------------
     def badge(ok: bool) -> str:
-        if ok:
-            return "<span style='color:#00c853; font-weight:bold;'>🟢 OK</span>"
-        return "<span style='color:#d50000; font-weight:bold;'>🔴 DOWN</span>"
+        return (
+            "<span style='color:#00c853; font-weight:bold;'>🟢 OK</span>"
+            if ok else
+            "<span style='color:#d50000; font-weight:bold;'>🔴 DOWN</span>"
+        )
 
     # -------------------------------
     # API Status Section
@@ -84,7 +85,7 @@ def render_health_monitor() -> None:
 
     for (name, ok, latency), col in zip(model_cards, [colA, colB, colC]):
         safe_latency = latency if isinstance(latency, int) else 0
-        bar_width = min(safe_latency, 3000) / 30  # max width cap
+        bar_width = min(safe_latency, 3000) / 30
 
         col.markdown(
             f"""
@@ -122,6 +123,14 @@ def render_health_monitor() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+    st.markdown("---")
+
+    # -------------------------------------------------
+    # 2. LOCAL SYSTEM DASHBOARD (from utils.health)
+    # -------------------------------------------------
+    st.markdown("## 🖥️ Local System Dashboard")
+    run_health_monitor()
 
 
 # -------------------------------------------------
@@ -168,7 +177,7 @@ def run_admin() -> None:
         "Content Manager",
         "Settings",
         "Sync Chapters",
-        "Health Monitor",   # NEW
+        "Health Monitor",
     ]
 
     menu = st.sidebar.radio(
@@ -190,7 +199,7 @@ def run_admin() -> None:
         "Content Manager": render_content_admin,
         "Settings": render_settings,
         "Sync Chapters": render_admin_sync,
-        "Health Monitor": render_health_monitor,  # NEW
+        "Health Monitor": render_health_monitor,
     }
 
     # Safe route execution
