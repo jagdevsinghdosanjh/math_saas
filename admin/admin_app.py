@@ -2,6 +2,7 @@ import streamlit as st
 
 from admin.sync_chapters import sync_chapters
 from auth import require_admin, logout, top_bar
+from utils.health import health_check
 
 from admin.analytics import render as render_analytics
 from admin.subscriptions_admin import render as render_subscriptions
@@ -14,7 +15,6 @@ from admin.content_admin import render as render_content_admin
 from admin.settings import render as render_settings
 
 # NEW: Health Monitor
-from utils.health import health_check
 
 
 # -------------------------------------------------
