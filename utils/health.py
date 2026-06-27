@@ -14,7 +14,7 @@ from utils.config import (
 
 TIMEOUT = 25 #insted of 8 for heavy_math_model to respond correctly
 
-def host_ram_monitor(base_url: str = "http://127.0.0.1:5055"):
+def host_ram_monitor(base_url: str = "http://192.168.1.2:5055"):
     """
     Fetches host RAM from Windows RAM API bridge.
     Returns dict with total_gb, used_gb, free_gb or error.
