@@ -39,7 +39,7 @@ def health_check():
 
     # 1. Local API
     try:
-        r = requests.get("https://ollama.jsdmath.in/api/tags", timeout=TIMEOUT)
+        r = requests.get("https://ollama.jsdmath.in", timeout=TIMEOUT)
         # r = requests.get("http://localhost:11434/api/tags", timeout=TIMEOUT)
         results["local_api"] = r.status_code == 200
     except (RequestException, Timeout):
