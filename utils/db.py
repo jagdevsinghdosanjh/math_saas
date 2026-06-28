@@ -42,13 +42,43 @@ def get_supabase() -> Client:
 # ------------------------------------------------------------
 def require_user() -> Dict[str, Any]:
     """
-    Ensures the user is logged in using the unified auth model.
-    Returns the user profile dict.
+    Ensures the user is logged in.
+    Accepts both dict (profiles table) and Supabase User objects.
+    Returns a normalized dict.
     """
     user = st.session_state.get("user")
 
-    if not isinstance(user, dict):
-        st.error("You are not logged in.")
-        st.stop()
+    # Case 1: dict from login handler
+    if isinstance(user, dict):
+        return user
 
-    return user
+    # Case 2: Supabase User object (Pydantic)
+    if user is not None:
+        meta = getattr(user, "user_metadata", {}) or {}
+        email = getattr(user, "email", None)
+
+        # Normalize into dict
+        return {
+            "id": getattr(user, "id", None),
+            "email": email,
+            "full_name": meta.get("full_name"),
+            "name": meta.get("name"),
+            "is_admin": meta.get("is_admin", False),
+        }
+
+    # Case 3: no user at all
+    st.error("You are not logged in.")
+    st.stop()
+
+# def require_user() -> Dict[str, Any]:
+#     """
+#     Ensures the user is logged in using the unified auth model.
+#     Returns the user profile dict.
+#     """
+#     user = st.session_state.get("user")
+
+#     if not isinstance(user, dict):
+#         st.error("You are not logged in.")
+#         st.stop()
+
+#     return user
