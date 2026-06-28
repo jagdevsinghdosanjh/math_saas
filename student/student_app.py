@@ -1,6 +1,6 @@
 import streamlit as st
 from typing import Dict, List, Any
-
+from auth import restore_session
 from auth import (
     require_student,
     logout,
@@ -22,7 +22,7 @@ from services.solver import solve_stepwise
 from services.question_generator import generate_questions
 from services.summary import summarize_chapter
 
-
+restore_session()
 # ---------------------------------------------------------
 # QUIZ CHAPTERS
 # ---------------------------------------------------------

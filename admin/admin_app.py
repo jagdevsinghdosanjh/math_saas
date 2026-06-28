@@ -14,6 +14,8 @@ from admin.pdf_notes import render as render_pdf_notes
 from admin.videos import render as render_videos
 from admin.content_admin import render as render_content_admin
 from admin.settings import render as render_settings
+from auth import restore_session
+restore_session()
 
 
 # -------------------------------------------------
@@ -147,9 +149,9 @@ def render_health_monitor() -> None:
 
     st.markdown("---")
 
-    # -------------------------------------------------
-    # 3. CONTAINER HEALTH (run_health_monitor)
-    # -------------------------------------------------
+# -------------------------------------------------
+# 3. CONTAINER HEALTH (run_health_monitor)
+#--------------------------------------------------
     run_health_monitor()
 
 # -------------------------------------------------

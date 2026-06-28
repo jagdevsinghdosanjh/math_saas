@@ -2,6 +2,7 @@ import streamlit as st
 import re
 from typing import Any, Dict, List, cast
 from utils.db import get_supabase
+#from auth import restore_session
 
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
@@ -78,6 +79,21 @@ def render_public_content() -> None:
         st.markdown(body, unsafe_allow_html=True)
 
 # ------------------------------------------------------------
+# THEMES
+# ------------------------------------------------------------
+def apply_dark_theme() -> None:
+    st.markdown(
+        "<style>.main { background: #050608; color: #f8f9fa; }</style>",
+        unsafe_allow_html=True,
+    )
+
+def apply_light_theme() -> None:
+    st.markdown(
+        "<style>.main { background: #ffffff; color: #111827; }</style>",
+        unsafe_allow_html=True,
+    )
+
+# ------------------------------------------------------------
 # TOP BAR
 # ------------------------------------------------------------
 def top_bar(title: str, role: str, logout_param: str) -> None:
@@ -101,16 +117,25 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
         logout()
 
 # ------------------------------------------------------------
-# LOGIN STATE STORAGE
-# ------------------------------------------------------------
+# AUTH PERSISTENCE (SINGLE MODEL)
+# # ------------------------------------------------------------
+# def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
+#     """Stores persistent login state + Supabase session."""
+#     # Persist logical auth state
+#     st.session_state["auth_state"] = {
+#         "user": user,
+#         "role": role,
+#         "jwt": jwt,
+#     }
 def set_logged_in_user(profile, role, access_token, refresh_token):
-    """Store user, role, and Supabase session tokens."""
     st.session_state["user"] = profile
     st.session_state["role"] = role
+
+    # Store Supabase session tokens
     st.session_state["access_token"] = access_token
     st.session_state["refresh_token"] = refresh_token
 
-    # Save unified auth state
+    # Store unified auth state for persistence
     st.session_state["auth_state"] = {
         "user": profile,
         "role": role,
@@ -118,25 +143,62 @@ def set_logged_in_user(profile, role, access_token, refresh_token):
         "refresh_token": refresh_token,
     }
 
-    # Save Supabase session object
-    sb = get_supabase()
-    st.session_state["session"] = sb.auth.get_session()
+# def set_logged_in_user(profile, role, access_token, refresh_token):
+#     # Store user and tokens
+#     st.session_state["user"] = profile
+#     st.session_state["role"] = role
+#     st.session_state["access_token"] = access_token
+#     st.session_state["refresh_token"] = refresh_token
 
-# ------------------------------------------------------------
-# SESSION RESTORE (THE FIX)
-# ------------------------------------------------------------
+#     # Preserve Supabase session if it exists
+#     supabase_session = st.session_state.get("session")
+
+#     # Remove old auth keys (cleanup)
+#     for key in ["jwt", "student", "admin", "auth_state"]:
+#         st.session_state.pop(key, None)
+
+#     # Restore Supabase session
+#     if supabase_session is not None:
+#         st.session_state["session"] = supabase_session
+
+# def restore_session() -> None:
+#     """Restore Supabase + logical auth from auth_state, if present."""
+#     # Ensure keys exist
+#     st.session_state.setdefault("user", None)
+#     st.session_state.setdefault("role", None)
+#     st.session_state.setdefault("jwt", None)
+
+#     session = st.session_state.get("session")
+#     auth_state = st.session_state.get("auth_state")
+
+#     # Restore Supabase session
+#     if session:
+#         sb = get_supabase()
+#         access_token = getattr(session, "access_token", None)
+#         refresh_token = getattr(session, "refresh_token", None)
+#         if access_token and refresh_token:
+#             sb.auth.set_session(access_token, refresh_token)
+
+#     # Restore app login state
+#     if auth_state:
+#         st.session_state["user"] = auth_state.get("user")
+#         st.session_state["role"] = auth_state.get("role")
+#         st.session_state["jwt"] = auth_state.get("jwt")
 def restore_session():
     sb = get_supabase()
 
-    # 1. Try restoring from Supabase cookies
+    # 1. Try to restore from Supabase cookies
     session = sb.auth.get_session()
+
     if session and session.user:
-        st.session_state["session"] = session
+        # Restore user
         st.session_state["user"] = session.user
 
+        # Restore role from metadata
         meta = session.user.user_metadata or {}
         st.session_state["role"] = meta.get("role")
 
+        # Restore tokens
         st.session_state["access_token"] = session.access_token
         st.session_state["refresh_token"] = session.refresh_token
 
@@ -162,6 +224,7 @@ def restore_session():
 # LOGOUT
 # ------------------------------------------------------------
 def logout() -> None:
+    # Optional: sign out from Supabase too
     try:
         sb = get_supabase()
         sb.auth.sign_out()
@@ -175,8 +238,6 @@ def logout() -> None:
         "login_mode",
         "session",
         "auth_state",
-        "access_token",
-        "refresh_token",
     ]:
         st.session_state.pop(key, None)
 
