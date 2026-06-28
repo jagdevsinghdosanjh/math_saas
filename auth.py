@@ -134,8 +134,10 @@ def restore_session():
         st.session_state["session"] = session
         st.session_state["user"] = session.user
 
+        # DO NOT overwrite role unless metadata contains it
         meta = session.user.user_metadata or {}
-        st.session_state["role"] = meta.get("role")
+        if "role" in meta:
+            st.session_state["role"] = meta["role"]
 
         st.session_state["access_token"] = session.access_token
         st.session_state["refresh_token"] = session.refresh_token
@@ -157,6 +159,39 @@ def restore_session():
         return True
 
     return False
+
+# def restore_session():
+#     sb = get_supabase()
+
+#     # 1. Try restoring from Supabase cookies
+#     session = sb.auth.get_session()
+#     if session and session.user:
+#         st.session_state["session"] = session
+#         st.session_state["user"] = session.user
+
+#         meta = session.user.user_metadata or {}
+#         st.session_state["role"] = meta.get("role")
+
+#         st.session_state["access_token"] = session.access_token
+#         st.session_state["refresh_token"] = session.refresh_token
+
+#         return True
+
+#     # 2. Fallback: restore from stored auth_state
+#     auth_state = st.session_state.get("auth_state")
+#     if auth_state:
+#         st.session_state["user"] = auth_state.get("user")
+#         st.session_state["role"] = auth_state.get("role")
+
+#         access = auth_state.get("access_token")
+#         refresh = auth_state.get("refresh_token")
+
+#         if access and refresh:
+#             sb.auth.set_session(access, refresh)
+
+#         return True
+
+#     return False
 
 # ------------------------------------------------------------
 # LOGOUT
