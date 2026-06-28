@@ -130,6 +130,22 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
 
     if st.button("Logout", key=f"logout_{role}"):
         logout()
+# def top_bar(title: str, role: str, logout_param: str) -> None:
+#     user = st.session_state.get("user")
+#     display_name = get_display_name(user, role)
+
+#     st.markdown(
+#         f"""
+#         <div style="background:#0a0c10; border-bottom:1px solid #00ff88; padding:12px 16px;">
+#             <span style="color:#00ff88; font-weight:600;">{display_name}</span>
+#             <h3 style="margin:4px 0 0 0; color:white;">{title}</h3>
+#         </div>
+#         """,
+#         unsafe_allow_html=True,
+#     )
+
+#     if st.button("Logout", key=f"logout_{role}"):
+#         logout()
 
 
 # ------------------------------------------------------------

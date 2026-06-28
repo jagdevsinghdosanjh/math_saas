@@ -1,6 +1,6 @@
 import streamlit as st
 from typing import Dict, List, Any
-from auth import restore_session
+
 from auth import (
     require_student,
     logout,
@@ -22,14 +22,24 @@ from services.solver import solve_stepwise
 from services.question_generator import generate_questions
 from services.summary import summarize_chapter
 
-restore_session()
+
 # ---------------------------------------------------------
-# QUIZ CHAPTERS
+# QUIZ CHAPTERS (Refactored)
 # ---------------------------------------------------------
 def render_quiz_chapters() -> None:
-    user=require_user()
-    meta = user.get("user_metadata", {})
-    student_name = meta.get("name", "").replace(" ", "%20")
+    user = require_user()
+
+    # Handle dict vs Pydantic user
+    if isinstance(user, dict):
+        meta = user
+    else:
+        meta = getattr(user, "user_metadata", {}) or {}
+
+    student_name = (
+        meta.get("full_name")
+        or meta.get("name")
+        or meta.get("email", "")
+    ).replace(" ", "%20")
 
     sb = get_supabase()
 
@@ -46,7 +56,6 @@ def render_quiz_chapters() -> None:
         st.error(f"Error fetching quiz chapters: {exc}")
         return
 
-    # Ensure we always have a list
     if not isinstance(raw_data, list):
         st.info("No quiz chapters available yet.")
         return
@@ -59,7 +68,6 @@ def render_quiz_chapters() -> None:
 
     st.subheader("📘 Class‑wise Practice Quizzes")
 
-    # Group chapters by grade
     grouped: Dict[str, List[Dict[str, Any]]] = {"9": [], "10": []}
 
     for ch in chapters:
@@ -102,7 +110,6 @@ def render_quiz_chapters() -> None:
                 f"chapter={safe_title}&name={student_name}"
             )
 
-
             with st.expander(title):
                 st.write(f"Practice quizzes for **{title}**")
                 st.markdown(
@@ -110,26 +117,24 @@ def render_quiz_chapters() -> None:
                     unsafe_allow_html=True,
                 )
 
+
 # ---------------------------------------------------------
-# MAIN STUDENT APP
+# MAIN STUDENT APP (Refactored)
 # ---------------------------------------------------------
 def run_student() -> None:
     app_container_style()
 
+    # Restore user & role
     require_user()
     require_student()
 
-    # ---------------------------------------------------------
-    # LOGOUT HANDLER
-    # ---------------------------------------------------------
+    # Logout via query params
     params = st.query_params
     if params.get("student_logout") == "true":
         logout()
         return
 
-    # ---------------------------------------------------------
-    # TOP BAR
-    # ---------------------------------------------------------
+    # Top bar
     top_bar("Math Hub Student Portal", "Student", "student_logout")
 
     st.markdown(
@@ -144,9 +149,7 @@ def run_student() -> None:
         unsafe_allow_html=True,
     )
 
-    # ---------------------------------------------------------
-    # TABS
-    # ---------------------------------------------------------
+    # Tabs
     tab_labels = [
         "Dashboard",
         "Chapters",
@@ -171,45 +174,31 @@ def run_student() -> None:
         tab_notes,
     ) = st.tabs(tab_labels)
 
-    # ---------------------------------------------------------
-    # DASHBOARD TAB
-    # ---------------------------------------------------------
+    # Dashboard
     with tab_dashboard:
         render_dashboard()
 
-    # ---------------------------------------------------------
-    # CHAPTERS TAB
-    # ---------------------------------------------------------
+    # Chapters
     with tab_chapters:
         render_chapters_page()
 
-    # ---------------------------------------------------------
-    # QUIZ TAB
-    # ---------------------------------------------------------
+    # Quizzes
     with tab_quiz:
         render_quiz_chapters()
 
-    # ---------------------------------------------------------
-    # SUBSCRIPTION TAB
-    # ---------------------------------------------------------
+    # Subscription
     with tab_subs:
         render_subscriptions_page()
 
-    # ---------------------------------------------------------
-    # BILLING TAB
-    # ---------------------------------------------------------
+    # Billing
     with tab_billing:
         render_billing_history()
 
-    # ---------------------------------------------------------
-    # PUBLIC CONTENT TAB
-    # ---------------------------------------------------------
+    # Public content
     with tab_public:
         render_public_content()
 
-    # ---------------------------------------------------------
-    # AI TUTOR TAB
-    # ---------------------------------------------------------
+    # AI Tutor
     with tab_ai_tutor:
         st.subheader("🤖 AI Tutor – Explain My Mistake")
 
@@ -229,9 +218,7 @@ def run_student() -> None:
             else:
                 st.warning("Please paste your solution first.")
 
-    # ---------------------------------------------------------
-    # WORKSHEET GENERATOR TAB
-    # ---------------------------------------------------------
+    # Worksheet Generator
     with tab_worksheet:
         st.subheader("📝 Worksheet Generator")
 
@@ -254,9 +241,7 @@ def run_student() -> None:
             else:
                 st.warning("Please enter a chapter/topic.")
 
-    # ---------------------------------------------------------
-    # CHAPTER NOTES TAB
-    # ---------------------------------------------------------
+    # Chapter Notes
     with tab_notes:
         st.subheader("📘 Chapter Notes Generator")
 

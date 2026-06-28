@@ -1,5 +1,5 @@
 import streamlit as st
-from auth import restore_session
+import auth
 
 from themes.theme import apply_dark_theme, apply_light_theme
 from admin.admin_app import run_admin
@@ -96,7 +96,8 @@ def student_login_form():
 # MAIN ROUTER
 # -------------------------------------------------
 def main():
-    restore_session()
+    # Restore session FIRST
+    auth.restore_session()
 
     # Razorpay redirect
     if st.query_params.get("page") == "razorpay_checkout":

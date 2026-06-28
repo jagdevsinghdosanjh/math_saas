@@ -3,7 +3,7 @@ import streamlit as st
 from auth import require_admin, logout, top_bar
 from admin.sync_chapters import sync_chapters
 
-from utils.health import health_check, run_health_monitor,host_ram_monitor
+from utils.health import health_check, run_health_monitor, host_ram_monitor
 
 from admin.analytics import render as render_analytics
 from admin.subscriptions_admin import render as render_subscriptions
@@ -14,24 +14,18 @@ from admin.pdf_notes import render as render_pdf_notes
 from admin.videos import render as render_videos
 from admin.content_admin import render as render_content_admin
 from admin.settings import render as render_settings
-from auth import restore_session
-restore_session()
 
 
 # -------------------------------------------------
-# HEALTH MONITOR PAGE (Unified: API + Local Dashboard)
+# HEALTH MONITOR PAGE
 # -------------------------------------------------
 def render_health_monitor() -> None:
     st.title("🔍 System Health")
 
-    # Auto-refresh toggle
     auto_refresh = st.checkbox("Auto-refresh every 10 seconds", value=False)
     if auto_refresh:
         st.rerun()
 
-    # -------------------------------------------------
-    # 1. API + MODEL LATENCY SECTION
-    # -------------------------------------------------
     results = health_check()
 
     def badge(ok: bool) -> str:
@@ -41,11 +35,8 @@ def render_health_monitor() -> None:
             "<span style='color:#d50000; font-weight:bold;'>🔴 DOWN</span>"
         )
 
-    # -------------------------------
-    # API Status Section
-    # -------------------------------
+    # API Status
     st.markdown("## 🌐 API Status")
-
     col1, col2 = st.columns(2)
 
     with col1:
@@ -72,9 +63,7 @@ def render_health_monitor() -> None:
 
     st.markdown("---")
 
-    # -------------------------------
-    # Model Status Section
-    # -------------------------------
+    # Model Status
     st.markdown("## 🤖 Model Status")
 
     model_cards = [
@@ -112,11 +101,8 @@ def render_health_monitor() -> None:
 
     st.markdown("---")
 
-    # -------------------------------
-    # Summary Section
-    # -------------------------------
+    # Summary
     st.markdown("## 📊 Summary")
-
     st.write(
         f"""
         - **APIs Online:** {badge(bool(results["tunnel_api"]))}
@@ -128,15 +114,8 @@ def render_health_monitor() -> None:
 
     st.markdown("---")
 
-    # -------------------------------------------------
-    # 2. RHINO HOST STATUS (Windows RAM API)
-    # -------------------------------------------------
+    # Rhino Host RAM
     st.markdown("# 🖥️ Rhino Host - Status")
-    st.markdown(
-        """<img src="https://www.bing.com/th/id/OGC.9afbdaf05a62872709c05a0a0591af20?o=7&cb=thfc1falcon3&pid=1.7&rm=3&rurl=https%3a%2f%2fmedia1.tenor.com%2fm%2fAqzx4T3G940AAAAC%2frhino.gif&ehk=DEdKMwil8LUhGh0UPe7xKHnRcKUPYqYwx6sGind2%2bZw%3d" 
-         width="60"> Rhino Status""",
-        unsafe_allow_html=True,
-    )
 
     ram = host_ram_monitor(base_url="http://192.168.1.2:5055")
 
@@ -149,13 +128,12 @@ def render_health_monitor() -> None:
 
     st.markdown("---")
 
-# -------------------------------------------------
-# 3. CONTAINER HEALTH (run_health_monitor)
-#--------------------------------------------------
+    # Container Health
     run_health_monitor()
 
+
 # -------------------------------------------------
-# ADMIN SYNC BUTTON
+# SYNC BUTTON
 # -------------------------------------------------
 def render_admin_sync() -> None:
     st.subheader("🔄 Sync CBSE Chapters to Supabase")
@@ -175,16 +153,13 @@ def render_admin_sync() -> None:
 def run_admin() -> None:
     require_admin()
 
-    # Logout via query params
     params = st.query_params
     if params.get("admin_logout") == "true":
         logout()
         return
 
-    # Top bar
     top_bar("Math Hub Admin Panel", "Admin", "admin_logout")
 
-    # Sidebar navigation
     st.sidebar.markdown("### Navigation")
 
     nav_items = [
@@ -208,7 +183,6 @@ def run_admin() -> None:
         key="admin_menu_radio",
     )
 
-    # Route mapping
     routes = {
         "Analytics": render_analytics,
         "Subscriptions": render_subscriptions,
@@ -223,12 +197,11 @@ def run_admin() -> None:
         "Health Monitor": render_health_monitor,
     }
 
-    # Safe route execution
-    try:
-        handler = routes.get(menu)
-        if handler:
+    handler = routes.get(menu)
+    if handler:
+        try:
             handler()
-        else:
-            st.error("Invalid admin section selected.")
-    except Exception as exc:
-        st.error(f"Error loading section: {exc}")
+        except Exception as exc:
+            st.error(f"Error loading section: {exc}")
+    else:
+        st.error("Invalid admin section selected.")
