@@ -1,10 +1,7 @@
 import streamlit as st
+from auth import restore_session
 
-from auth import (
-    restore_session,
-    apply_dark_theme,
-    apply_light_theme,
-)
+from themes.theme import apply_dark_theme, apply_light_theme
 from admin.admin_app import run_admin
 from student.student_app import run_student
 from student.public_content import render_public_content
