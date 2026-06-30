@@ -116,8 +116,8 @@ def main():
 
     theme_choice = st.radio(
         "Choose Theme:",
-        ["Dark (Neon)", "Light"],
-        index=["Dark (Neon)", "Light"].index(default_theme),
+        ["Light","Dark (Neon)"],
+        index=["Light","Dark (Neon)"].index(default_theme),
         horizontal=True,
     )
 
