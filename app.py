@@ -100,7 +100,12 @@ def main():
     # Restore session FIRST
     auth.restore_session()
 
-    # Razorpay redirect
+    # Prevent direct access to checkout without session
+    if "user" not in st.session_state and st.query_params.get("page") == "razorpay_checkout":
+        st.error("Session expired. Please log in again.")
+        return
+
+    # Razorpay redirect (same tab)
     if st.query_params.get("page") == "razorpay_checkout":
         razorpay_checkout.render_razorpay_checkout()
         return
