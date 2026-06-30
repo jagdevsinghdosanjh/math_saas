@@ -1,7 +1,21 @@
 import streamlit as st
 from supabase import create_client, Client
 from typing import Any, Dict
+import os
 
+def get_supabase_admin():
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+    if url is None:
+        st.error("SUPABASE_URL is missing in environment variables.")
+        raise ValueError("SUPABASE_URL is missing")
+
+    if key is None:
+        st.error("SUPABASE_SERVICE_ROLE_KEY is missing in environment variables.")
+        raise ValueError("SUPABASE_SERVICE_ROLE_KEY is missing")
+
+    return create_client(url, key)
 
 # ------------------------------------------------------------
 # BASE CLIENT (ANON KEY ONLY)
