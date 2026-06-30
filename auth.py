@@ -35,7 +35,51 @@ def extract_user_dict(user_obj: Any) -> Dict[str, Any]:
         "is_admin": meta.get("is_admin", False),
         "metadata": meta,
     }
+def app_container_style() -> None:
+    dark = is_dark_theme()
 
+    if dark:
+        bg = "radial-gradient(circle at 20% 20%, #0f1115, #050608 60%)"
+        text = "#f8f9fa"
+        card_bg = "rgba(18, 20, 23, 0.65)"
+        card_border = "rgba(0,255,136,0.25)"
+        card_shadow = "0 0 22px rgba(0,255,136,0.18)"
+        accent = "#00ff88"
+    else:
+        bg = "#ffffff"
+        text = "#222222"
+        card_bg = "#fafafa"
+        card_border = "#ddd"
+        card_shadow = "0 0 12px rgba(0,0,0,0.08)"
+        accent = "#009944"
+
+    st.markdown(
+        f"""
+        <style>
+        body, .stApp {{
+            background: {bg} !important;
+            color: {text} !important;
+        }}
+
+        p, span, label, h1, h2, h3, h4, h5, h6, div {{
+            color: {text} !important;
+        }}
+
+        .neon-card, .app-card {{
+            background: {card_bg} !important;
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid {card_border} !important;
+            box-shadow: {card_shadow} !important;
+        }}
+
+        h1, h2, h3, h4 {{
+            color: {accent} !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # ---------------------------------------------------------
 # SESSION RESTORE (CRITICAL)
