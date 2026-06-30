@@ -5,9 +5,11 @@ from typing import Any, Dict, List, cast
 from utils.db import get_supabase
 from themes.theme import is_dark_theme
 
+# Legacy constants (required by admin_app.py)
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
 ACCENT = "#00ff88"
+
 
 # ---------------------------------------------------------
 # GLOBAL STYLE
@@ -58,21 +60,9 @@ def app_container_style() -> None:
         unsafe_allow_html=True,
     )
 
-def require_student():
-    user = st.session_state.get("user")
-    if not user:
-        st.error("You are not logged in.")
-        st.stop()
-
-    # Admins should NOT access student pages
-    if user.get("is_admin", False):
-        st.error("Students only. Please use Admin Login.")
-        st.stop()
-
-    return user
 
 # ---------------------------------------------------------
-# SESSION RESTORE (CRITICAL FOR RAZORPAY)
+# SESSION RESTORE (CRITICAL FOR LOGIN + RAZORPAY)
 # ---------------------------------------------------------
 def restore_session() -> bool:
     sb = get_supabase()
@@ -80,31 +70,71 @@ def restore_session() -> bool:
     # 1. Supabase cookie session
     session = sb.auth.get_session()
     if session and session.user:
-        st.session_state["session"] = session
-        st.session_state["user"] = session.user
-        st.session_state["role"] = session.user.user_metadata.get("role")
-        st.session_state["access_token"] = session.access_token
-        st.session_state["refresh_token"] = session.refresh_token
+        st.session_state["auth_state"] = {
+            "user": session.user,
+            "role": session.user.user_metadata.get("role"),
+            "access_token": session.access_token,
+            "refresh_token": session.refresh_token,
+        }
         return True
 
     # 2. Stored session_state
     auth_state = st.session_state.get("auth_state")
     if auth_state:
-        user = auth_state.get("user")
-        role = auth_state.get("role")
         access = auth_state.get("access_token")
         refresh = auth_state.get("refresh_token")
 
         if access and refresh:
             sb.auth.set_session(access, refresh)
 
-        st.session_state["user"] = user
-        st.session_state["role"] = role
-        st.session_state["access_token"] = access
-        st.session_state["refresh_token"] = refresh
         return True
 
     return False
+
+
+# ---------------------------------------------------------
+# REQUIRE USER (STUDENT OR ADMIN)
+# ---------------------------------------------------------
+def require_user():
+    auth_state = st.session_state.get("auth_state")
+    if not auth_state:
+        st.error("You are not logged in.")
+        st.stop()
+    return auth_state["user"]
+
+
+# ---------------------------------------------------------
+# REQUIRE STUDENT
+# ---------------------------------------------------------
+def require_student():
+    auth_state = st.session_state.get("auth_state")
+    if not auth_state:
+        st.error("You are not logged in.")
+        st.stop()
+
+    user = auth_state["user"]
+    if user.get("is_admin", False):
+        st.error("Students only. Please use Admin Login.")
+        st.stop()
+
+    return user
+
+
+# ---------------------------------------------------------
+# REQUIRE ADMIN
+# ---------------------------------------------------------
+def require_admin():
+    auth_state = st.session_state.get("auth_state")
+    if not auth_state:
+        st.error("You are not logged in.")
+        st.stop()
+
+    user = auth_state["user"]
+    if not user.get("is_admin", False):
+        st.error("Admin access required.")
+        st.stop()
+
+    return user
 
 
 # ---------------------------------------------------------
@@ -180,23 +210,7 @@ def get_display_name(user: Any, role: str) -> str:
 
 
 # ---------------------------------------------------------
-# ADMIN ACCESS CHECK
-# ---------------------------------------------------------
-def require_admin():
-    user = st.session_state.get("user")
-    if not user:
-        st.error("You are not logged in.")
-        st.stop()
-
-    if not user.get("is_admin", False):
-        st.error("Admin access required.")
-        st.stop()
-
-    return user
-
-
-# ---------------------------------------------------------
-# TOP BAR (ADMIN + STUDENT)
+# TOP BAR
 # ---------------------------------------------------------
 def top_bar(title: str, role: str) -> None:
     dark = is_dark_theme()
@@ -212,7 +226,8 @@ def top_bar(title: str, role: str) -> None:
         name_color = "#009944"
         title_color = "#222222"
 
-    user = st.session_state.get("user")
+    auth_state = st.session_state.get("auth_state")
+    user = auth_state["user"] if auth_state else None
     display_name = get_display_name(user, role)
 
     st.markdown(
@@ -244,18 +259,6 @@ def logout() -> None:
     except Exception:
         pass
 
-    for key in [
-        "user",
-        "role",
-        "jwt",
-        "login_mode",
-        "session",
-        "auth_state",
-        "access_token",
-        "refresh_token",
-        "sub_id",
-    ]:
-        st.session_state.pop(key, None)
-
+    st.session_state.clear()
     st.query_params.clear()
     st.rerun()
