@@ -5,64 +5,40 @@ from typing import Any, Dict, List, cast
 from utils.db import get_supabase
 from themes.theme import is_dark_theme
 
-# Legacy constants (required by admin_app.py)
+# Required by admin_app.py
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
 ACCENT = "#00ff88"
 
 
 # ---------------------------------------------------------
-# GLOBAL STYLE
+# SAFE USER EXTRACTOR (DICT or SUPABASE USER OBJECT)
 # ---------------------------------------------------------
-def app_container_style() -> None:
-    dark = is_dark_theme()
+def extract_user_dict(user_obj: Any) -> Dict[str, Any]:
+    """
+    Converts Supabase User object or dict into a clean dict.
+    Ensures consistent access to fields like is_admin, email, metadata.
+    """
 
-    if dark:
-        bg = "radial-gradient(circle at 20% 20%, #0f1115, #050608 60%)"
-        text = "#f8f9fa"
-        card_bg = "rgba(18, 20, 23, 0.65)"
-        card_border = "rgba(0,255,136,0.25)"
-        card_shadow = "0 0 22px rgba(0,255,136,0.18)"
-        accent = "#00ff88"
-    else:
-        bg = "#ffffff"
-        text = "#222222"
-        card_bg = "#fafafa"
-        card_border = "#ddd"
-        card_shadow = "0 0 12px rgba(0,0,0,0.08)"
-        accent = "#009944"
+    if isinstance(user_obj, dict):
+        return user_obj
 
-    st.markdown(
-        f"""
-        <style>
-        body, .stApp {{
-            background: {bg} !important;
-            color: {text} !important;
-        }}
+    # Supabase User object
+    meta = getattr(user_obj, "user_metadata", {}) or {}
+    email = getattr(user_obj, "email", None)
 
-        p, span, label, h1, h2, h3, h4, h5, h6, div {{
-            color: {text} !important;
-        }}
-
-        .neon-card, .app-card {{
-            background: {card_bg} !important;
-            border-radius: 14px;
-            padding: 20px;
-            border: 1px solid {card_border} !important;
-            box-shadow: {card_shadow} !important;
-        }}
-
-        h1, h2, h3, h4 {{
-            color: {accent} !important;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    return {
+        "id": getattr(user_obj, "id", None),
+        "email": email,
+        "full_name": meta.get("full_name"),
+        "name": meta.get("name"),
+        "is_admin": meta.get("is_admin", False),
+        "metadata": meta,
+    }
 
 
 # ---------------------------------------------------------
-# SESSION RESTORE (CRITICAL FOR LOGIN + RAZORPAY)
+# SESSION RESTORE (CRITICAL)
 # ---------------------------------------------------------
 def restore_session() -> bool:
     sb = get_supabase()
@@ -70,9 +46,11 @@ def restore_session() -> bool:
     # 1. Supabase cookie session
     session = sb.auth.get_session()
     if session and session.user:
+        user_dict = extract_user_dict(session.user)
+
         st.session_state["auth_state"] = {
-            "user": session.user,
-            "role": session.user.user_metadata.get("role"),
+            "user": user_dict,
+            "role": user_dict.get("metadata", {}).get("role"),
             "access_token": session.access_token,
             "refresh_token": session.refresh_token,
         }
@@ -93,13 +71,14 @@ def restore_session() -> bool:
 
 
 # ---------------------------------------------------------
-# REQUIRE USER (STUDENT OR ADMIN)
+# REQUIRE USER
 # ---------------------------------------------------------
 def require_user():
     auth_state = st.session_state.get("auth_state")
     if not auth_state:
         st.error("You are not logged in.")
         st.stop()
+
     return auth_state["user"]
 
 
@@ -107,12 +86,8 @@ def require_user():
 # REQUIRE STUDENT
 # ---------------------------------------------------------
 def require_student():
-    auth_state = st.session_state.get("auth_state")
-    if not auth_state:
-        st.error("You are not logged in.")
-        st.stop()
+    user = require_user()
 
-    user = auth_state["user"]
     if user.get("is_admin", False):
         st.error("Students only. Please use Admin Login.")
         st.stop()
@@ -124,12 +99,8 @@ def require_student():
 # REQUIRE ADMIN
 # ---------------------------------------------------------
 def require_admin():
-    auth_state = st.session_state.get("auth_state")
-    if not auth_state:
-        st.error("You are not logged in.")
-        st.stop()
+    user = require_user()
 
-    user = auth_state["user"]
     if not user.get("is_admin", False):
         st.error("Admin access required.")
         st.stop()
@@ -187,9 +158,14 @@ def render_public_content() -> None:
 
 
 # ---------------------------------------------------------
-# DISPLAY NAME HANDLER
+# DISPLAY NAME
 # ---------------------------------------------------------
 def get_display_name(user: Any, role: str) -> str:
+    # Handle None safely
+    if not user:
+        return role.capitalize()
+
+    # If dict
     if isinstance(user, dict):
         return (
             user.get("full_name")
@@ -198,6 +174,7 @@ def get_display_name(user: Any, role: str) -> str:
             or role.capitalize()
         )
 
+    # If Supabase User object
     meta = getattr(user, "user_metadata", {}) or {}
     email = getattr(user, "email", None)
 
@@ -207,7 +184,6 @@ def get_display_name(user: Any, role: str) -> str:
         or email
         or role.capitalize()
     )
-
 
 # ---------------------------------------------------------
 # TOP BAR
