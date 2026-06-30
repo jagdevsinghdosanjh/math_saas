@@ -300,7 +300,7 @@ def render() -> None:
         return
 
     st.subheader("All Subscriptions")
-    st.dataframe(subs, use_container_width=True, hide_index=True)
+    st.dataframe(subs, width='stretch', hide_index=True)
 
     st.subheader("Inspect Subscription")
 

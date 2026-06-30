@@ -82,7 +82,7 @@ def run_health_monitor():
             }
             for m in models
         ])
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width='stretch')
 
     st.divider()
 
@@ -99,7 +99,7 @@ def run_health_monitor():
             })
 
     if processes:
-        st.dataframe(pd.DataFrame(processes), use_container_width=True)
+        st.dataframe(pd.DataFrame(processes), width='stretch')
     else:
         st.warning("No Ollama processes detected")
 
