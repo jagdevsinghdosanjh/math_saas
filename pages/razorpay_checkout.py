@@ -7,9 +7,7 @@ from utils.razorpay import get_razorpay_client, get_razorpay_keys
 from subscriptions.utils import plan_name
 
 
-# ---------------------------------------------------------
 # SAFE HELPERS
-# ---------------------------------------------------------
 def safe_dict(value: Any) -> Optional[Dict[str, Any]]:
     return value if isinstance(value, dict) else None
 
@@ -29,7 +27,7 @@ def safe_str(value: Any) -> str:
 
 
 def safe_order_create(client: Any, payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Safe wrapper for Razorpay order.create()"""
+    """Safe wrapper for Razorpay order.create()."""
     try:
         order = client.order.create(payload)  # type: ignore[attr-defined]
         return order if isinstance(order, dict) else {}
@@ -38,9 +36,7 @@ def safe_order_create(client: Any, payload: Dict[str, Any]) -> Dict[str, Any]:
         return {}
 
 
-# ---------------------------------------------------------
 # MAIN CHECKOUT PAGE
-# ---------------------------------------------------------
 def render_razorpay_checkout() -> None:
     st.write("DEBUG: render_razorpay_checkout() called")
 
@@ -54,9 +50,7 @@ def render_razorpay_checkout() -> None:
         st.error("You are not logged in.")
         st.stop()
 
-    # ---------------------------------------------------------
     # READ SUBSCRIPTION ID
-    # ---------------------------------------------------------
     sub_id = st.session_state.get("sub_id", "")
 
     if not sub_id:
@@ -69,9 +63,7 @@ def render_razorpay_checkout() -> None:
         st.error("Missing subscription ID.")
         st.stop()
 
-    # ---------------------------------------------------------
     # FETCH SUBSCRIPTION
-    # ---------------------------------------------------------
     res = (
         sb.table("subscriptions")
         .select("*")
@@ -106,9 +98,7 @@ def render_razorpay_checkout() -> None:
         "plan": plan,
     })
 
-    # ---------------------------------------------------------
     # FREE PLAN HANDLING
-    # ---------------------------------------------------------
     if amount == 0:
         st.success("You have subscribed to the free plan!")
 
@@ -123,9 +113,7 @@ def render_razorpay_checkout() -> None:
         st.switch_page("pages/subscriptions.py")
         return
 
-    # ---------------------------------------------------------
-    # PAID PLAN — RAZORPAY ORDER CREATION
-    # ---------------------------------------------------------
+    # PAID PLAN – RAZORPAY ORDER CREATION
     client = get_razorpay_client()
     st.write("DEBUG: Razorpay client =", client)
 
@@ -165,9 +153,7 @@ def render_razorpay_checkout() -> None:
         "razorpay_order_id": order_id
     }).eq("id", sub_id).execute()
 
-    # ---------------------------------------------------------
     # RENDER RAZORPAY POPUP
-    # ---------------------------------------------------------
     html = f"""
     <html>
     <body>

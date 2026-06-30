@@ -11,9 +11,8 @@ def _base_client() -> Client:
     anon = st.secrets["supabase"]["anon_key"]
     return create_client(url, anon)
 
-# ------------------------------------------------------------
+
 # GET SUPABASE CLIENT (AUTH-AWARE)
-# ------------------------------------------------------------
 def get_supabase() -> Client:
     """
     Returns a Supabase client.
@@ -35,9 +34,8 @@ def get_supabase() -> Client:
 
     return client
 
-# ------------------------------------------------------------
+
 # REQUIRE LOGGED-IN USER (UNIFIED MODEL)
-# ------------------------------------------------------------
 def require_user() -> Dict[str, Any]:
     """
     Ensures the user is logged in.
@@ -55,7 +53,6 @@ def require_user() -> Dict[str, Any]:
         meta = getattr(user, "user_metadata", {}) or {}
         email = getattr(user, "email", None)
 
-        # Normalize into dict
         return {
             "id": getattr(user, "id", None),
             "email": email,
@@ -67,16 +64,3 @@ def require_user() -> Dict[str, Any]:
     # Case 3: no user at all
     st.error("You are not logged in.")
     st.stop()
-
-# def require_user() -> Dict[str, Any]:
-#     """
-#     Ensures the user is logged in using the unified auth model.
-#     Returns the user profile dict.
-#     """
-#     user = st.session_state.get("user")
-
-#     if not isinstance(user, dict):
-#         st.error("You are not logged in.")
-#         st.stop()
-
-#     return user
