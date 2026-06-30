@@ -58,6 +58,37 @@ def app_container_style() -> None:
         unsafe_allow_html=True,
     )
 
+def restore_session():
+    sb = get_supabase()
+
+    # 1. Try Supabase cookie session
+    session = sb.auth.get_session()
+    if session and session.user:
+        st.session_state["session"] = session
+        st.session_state["user"] = session.user
+        st.session_state["role"] = session.user.user_metadata.get("role")
+        st.session_state["access_token"] = session.access_token
+        st.session_state["refresh_token"] = session.refresh_token
+        return True
+
+    # 2. Try stored session_state
+    auth_state = st.session_state.get("auth_state")
+    if auth_state:
+        user = auth_state.get("user")
+        role = auth_state.get("role")
+        access = auth_state.get("access_token")
+        refresh = auth_state.get("refresh_token")
+
+        if access and refresh:
+            sb.auth.set_session(access, refresh)
+
+        st.session_state["user"] = user
+        st.session_state["role"] = role
+        st.session_state["access_token"] = access
+        st.session_state["refresh_token"] = refresh
+        return True
+
+    return False
 
 # SANITIZERS
 def sanitize_html(text: str) -> str:

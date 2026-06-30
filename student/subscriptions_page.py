@@ -206,4 +206,6 @@ def _start_checkout(sb: Any, user_id: str, plan_code: str, amount_paise: int) ->
     st.session_state["sub_id"] = str(sub_id)
 
     # Navigate to Razorpay checkout page
-    st.switch_page("pages/razorpay_checkout.py")
+    st.query_params["page"] = "razorpay_checkout"
+    st.rerun()
+

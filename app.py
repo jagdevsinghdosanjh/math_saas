@@ -1,5 +1,6 @@
 import streamlit as st
 import auth
+import pages.razorpay_checkout as razorpay_checkout
 
 from themes.theme import apply_dark_theme, apply_light_theme
 from admin.admin_app import run_admin
@@ -101,7 +102,7 @@ def main():
 
     # Razorpay redirect
     if st.query_params.get("page") == "razorpay_checkout":
-        st.switch_page("pages/razorpay_checkout.py")
+        razorpay_checkout.render_razorpay_checkout()
         return
 
     # -------------------------------------------------
