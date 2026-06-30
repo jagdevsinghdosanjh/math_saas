@@ -1,183 +1,48 @@
 import streamlit as st
 import re
 from typing import Any, Dict, List, cast
-
 from utils.db import get_supabase
-from themes.theme import is_dark_theme
 
-# Required by admin_app.py
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
 ACCENT = "#00ff88"
 
-
-# ---------------------------------------------------------
-# SAFE USER EXTRACTOR (DICT or SUPABASE USER OBJECT)
-# ---------------------------------------------------------
-def extract_user_dict(user_obj: Any) -> Dict[str, Any]:
-    """
-    Converts Supabase User object or dict into a clean dict.
-    Ensures consistent access to fields like is_admin, email, metadata, role.
-    """
-
-    if isinstance(user_obj, dict):
-        # Ensure metadata exists
-        meta = user_obj.get("metadata", {}) or {}
-        return {
-            "id": user_obj.get("id"),
-            "email": user_obj.get("email"),
-            "full_name": user_obj.get("full_name"),
-            "name": user_obj.get("name"),
-            "is_admin": user_obj.get("is_admin", False),
-            "role": meta.get("role"),
-            "metadata": meta,
-        }
-
-    # Supabase User object
-    meta = getattr(user_obj, "user_metadata", {}) or {}
-    email = getattr(user_obj, "email", None)
-
-    return {
-        "id": getattr(user_obj, "id", None),
-        "email": email,
-        "full_name": meta.get("full_name"),
-        "name": meta.get("name"),
-        "is_admin": meta.get("is_admin", False),
-        "role": meta.get("role"),
-        "metadata": meta,
-    }
-
-
-# ---------------------------------------------------------
+# ------------------------------------------------------------
 # GLOBAL STYLE
-# ---------------------------------------------------------
+# ------------------------------------------------------------
 def app_container_style() -> None:
-    dark = is_dark_theme()
-
-    if dark:
-        bg = "radial-gradient(circle at 20% 20%, #0f1115, #050608 60%)"
-        text = "#f8f9fa"
-        card_bg = "rgba(18, 20, 23, 0.65)"
-        card_border = "rgba(0,255,136,0.25)"
-        card_shadow = "0 0 22px rgba(0,255,136,0.18)"
-        accent = "#00ff88"
-    else:
-        bg = "#ffffff"
-        text = "#222222"
-        card_bg = "#fafafa"
-        card_border = "#ddd"
-        card_shadow = "0 0 12px rgba(0,0,0,0.08)"
-        accent = "#009944"
-
     st.markdown(
-        f"""
-        <style>
-        body, .stApp {{
-            background: {bg} !important;
-            color: {text} !important;
-        }}
-
-        p, span, label, h1, h2, h3, h4, h5, h6, div {{
-            color: {text} !important;
-        }}
-
-        .neon-card, .app-card {{
-            background: {card_bg} !important;
+        """<style>
+        body {
+            background: radial-gradient(circle at 20% 20%, #0f1115, #050608 60%);
+            color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+        .neon-card {
+            background: rgba(18, 20, 23, 0.65);
+            backdrop-filter: blur(12px);
             border-radius: 14px;
             padding: 20px;
-            border: 1px solid {card_border} !important;
-            box-shadow: {card_shadow} !important;
-        }}
-
-        h1, h2, h3, h4 {{
-            color: {accent} !important;
-        }}
+            border: 1px solid rgba(0,255,136,0.25);
+            box-shadow: 0 0 22px rgba(0,255,136,0.18);
+        }
+        h1, h2, h3, h4 {
+            color: #00ff88;
+            font-weight: 600;
+        }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-
-# ---------------------------------------------------------
-# SESSION RESTORE (CRITICAL)
-# ---------------------------------------------------------
-def restore_session() -> bool:
-    sb = get_supabase()
-
-    # 1. Supabase cookie session
-    session = sb.auth.get_session()
-    if session and session.user:
-        user_dict = extract_user_dict(session.user)
-
-        st.session_state["auth_state"] = {
-            "user": user_dict,
-            "role": user_dict.get("role"),
-            "access_token": session.access_token,
-            "refresh_token": session.refresh_token,
-        }
-        return True
-
-    # 2. Stored session_state
-    auth_state = st.session_state.get("auth_state")
-    if auth_state:
-        access = auth_state.get("access_token")
-        refresh = auth_state.get("refresh_token")
-
-        if access and refresh:
-            sb.auth.set_session(access, refresh)
-
-        return True
-
-    return False
-
-
-# ---------------------------------------------------------
-# REQUIRE USER
-# ---------------------------------------------------------
-def require_user():
-    auth_state = st.session_state.get("auth_state")
-    if not auth_state:
-        st.error("You are not logged in.")
-        st.stop()
-
-    return auth_state["user"]
-
-
-# ---------------------------------------------------------
-# REQUIRE STUDENT
-# ---------------------------------------------------------
-def require_student():
-    user = require_user()
-
-    if user.get("is_admin", False):
-        st.error("Students only. Please use Admin Login.")
-        st.stop()
-
-    return user
-
-
-# ---------------------------------------------------------
-# REQUIRE ADMIN
-# ---------------------------------------------------------
-def require_admin():
-    user = require_user()
-
-    if not user.get("is_admin", False):
-        st.error("Admin access required.")
-        st.stop()
-
-    return user
-
-
-# ---------------------------------------------------------
+# ------------------------------------------------------------
 # SANITIZERS
-# ---------------------------------------------------------
+# ------------------------------------------------------------
 def sanitize_html(text: str) -> str:
     if not isinstance(text, str):
         return ""
     text = re.sub(r"</?div[^>]*>", "", text, flags=re.IGNORECASE)
     return text.replace("&nbsp;", " ").strip()
-
 
 def clean_math(text: Any) -> str:
     if not isinstance(text, str):
@@ -187,10 +52,9 @@ def clean_math(text: Any) -> str:
     text = text.replace("\\\\frac", "\\frac")
     return re.sub(r"\$\s*\$", "$$", text)
 
-
-# ---------------------------------------------------------
+# ------------------------------------------------------------
 # PUBLIC CONTENT
-# ---------------------------------------------------------
+# ------------------------------------------------------------
 def render_public_content() -> None:
     sb = get_supabase()
     res = (
@@ -199,386 +63,144 @@ def render_public_content() -> None:
         .order("created_at", desc=True)
         .execute()
     )
-
     raw_items = getattr(res, "data", []) or []
     items: List[Dict[str, Any]] = [
         cast(Dict[str, Any], row) for row in raw_items if isinstance(row, dict)
     ]
-
     if not items:
         st.info("No public content available.")
         return
-
     for item in items:
         title = str(item.get("title", "Untitled"))
         body_raw = item.get("body", "")
         body = sanitize_html(clean_math(body_raw))
-
         st.markdown(f"### {title}")
         st.markdown(body, unsafe_allow_html=True)
 
-
-# ---------------------------------------------------------
-# DISPLAY NAME
-# ---------------------------------------------------------
-def get_display_name(user: Any, role: str) -> str:
-    if not user:
-        return role.capitalize()
-
-    if isinstance(user, dict):
-        return (
-            user.get("full_name")
-            or user.get("name")
-            or user.get("email")
-            or role.capitalize()
-        )
-
-    meta = getattr(user, "user_metadata", {}) or {}
-    email = getattr(user, "email", None)
-
-    return (
-        meta.get("full_name")
-        or meta.get("name")
-        or email
-        or role.capitalize()
+# ------------------------------------------------------------
+# THEMES
+# ------------------------------------------------------------
+def apply_dark_theme() -> None:
+    st.markdown(
+        "<style>.main { background: #050608; color: #f8f9fa; }</style>",
+        unsafe_allow_html=True,
     )
 
+def apply_light_theme() -> None:
+    st.markdown(
+        "<style>.main { background: #ffffff; color: #111827; }</style>",
+        unsafe_allow_html=True,
+    )
 
-# ---------------------------------------------------------
+# ------------------------------------------------------------
 # TOP BAR
-# ---------------------------------------------------------
-def top_bar(title: str, role: str) -> None:
-    dark = is_dark_theme()
-
-    if dark:
-        bar_bg = "#0a0c10"
-        bar_border = "#00ff88"
-        name_color = "#00ff88"
-        title_color = "#ffffff"
-    else:
-        bar_bg = "#f0f0f0"
-        bar_border = "#cccccc"
-        name_color = "#009944"
-        title_color = "#222222"
-
-    auth_state = st.session_state.get("auth_state")
-    user = auth_state["user"] if auth_state else None
-    display_name = get_display_name(user, role)
-
+# ------------------------------------------------------------
+def top_bar(title: str, role: str, logout_param: str) -> None:
+    user = st.session_state.get("user", {})
+    display_name = (
+        user.get("full_name")
+        or user.get("name")
+        or user.get("email")
+        or role.capitalize()
+    )
     st.markdown(
         f"""
-        <div style="
-            background:{bar_bg};
-            border-bottom:1px solid {bar_border};
-            padding:12px 16px;
-            border-radius:6px;
-        ">
-            <span style="color:{name_color}; font-weight:600;">{display_name}</span>
-            <h3 style="margin:4px 0 0 0; color:{title_color};">{title}</h3>
+        <div style="background:#0a0c10; border-bottom:1px solid #00ff88; padding:12px 16px;">
+            <span style="color:#00ff88; font-weight:600;">{display_name}</span>
+            <h3 style="margin:4px 0 0 0; color:white;">{title}</h3>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
     if st.button("Logout", key=f"logout_{role}"):
         logout()
 
+# ------------------------------------------------------------
+# AUTH PERSISTENCE (SINGLE MODEL)
+# # ------------------------------------------------------------
+# def set_logged_in_user(user: Dict[str, Any], role: str, jwt: str) -> None:
+#     """Stores persistent login state + Supabase session."""
+#     # Persist logical auth state
+#     st.session_state["auth_state"] = {
+#         "user": user,
+#         "role": role,
+#         "jwt": jwt,
+#     }
+def set_logged_in_user(profile, role, access_token, refresh_token):
+    # Store user and tokens
+    st.session_state["user"] = profile
+    st.session_state["role"] = role
+    st.session_state["access_token"] = access_token
+    st.session_state["refresh_token"] = refresh_token
 
-# ---------------------------------------------------------
+    # Preserve Supabase session if it exists
+    supabase_session = st.session_state.get("session")
+
+    # Remove old auth keys (cleanup)
+    for key in ["jwt", "student", "admin", "auth_state"]:
+        st.session_state.pop(key, None)
+
+    # Restore Supabase session
+    if supabase_session is not None:
+        st.session_state["session"] = supabase_session
+
+def restore_session() -> None:
+    """Restore Supabase + logical auth from auth_state, if present."""
+    # Ensure keys exist
+    st.session_state.setdefault("user", None)
+    st.session_state.setdefault("role", None)
+    st.session_state.setdefault("jwt", None)
+
+    session = st.session_state.get("session")
+    auth_state = st.session_state.get("auth_state")
+
+    # Restore Supabase session
+    if session:
+        sb = get_supabase()
+        access_token = getattr(session, "access_token", None)
+        refresh_token = getattr(session, "refresh_token", None)
+        if access_token and refresh_token:
+            sb.auth.set_session(access_token, refresh_token)
+
+    # Restore app login state
+    if auth_state:
+        st.session_state["user"] = auth_state.get("user")
+        st.session_state["role"] = auth_state.get("role")
+        st.session_state["jwt"] = auth_state.get("jwt")
+
+# ------------------------------------------------------------
 # LOGOUT
-# ---------------------------------------------------------
+# ------------------------------------------------------------
 def logout() -> None:
+    # Optional: sign out from Supabase too
     try:
         sb = get_supabase()
         sb.auth.sign_out()
     except Exception:
         pass
 
-    st.session_state.clear()
+    for key in [
+        "user",
+        "role",
+        "jwt",
+        "login_mode",
+        "session",
+        "auth_state",
+    ]:
+        st.session_state.pop(key, None)
+
     st.query_params.clear()
     st.rerun()
 
-# import streamlit as st
-# import re
-# from typing import Any, Dict, List, cast
+# ------------------------------------------------------------
+# ROLE HELPERS
+# ------------------------------------------------------------
+def require_admin() -> None:
+    if st.session_state.get("role") != "admin":
+        st.error("Please login as admin.")
+        st.stop()
 
-# from utils.db import get_supabase
-# from themes.theme import is_dark_theme
-
-# # Required by admin_app.py
-# TEXT_MUTED = "#a0a6b1"
-# TEXT_MAIN = "#f8f9fa"
-# ACCENT = "#00ff88"
-
-
-# # ---------------------------------------------------------
-# # SAFE USER EXTRACTOR (DICT or SUPABASE USER OBJECT)
-# # ---------------------------------------------------------
-# def extract_user_dict(user_obj: Any) -> Dict[str, Any]:
-#     """
-#     Converts Supabase User object or dict into a clean dict.
-#     Ensures consistent access to fields like is_admin, email, metadata.
-#     """
-
-#     if isinstance(user_obj, dict):
-#         return user_obj
-
-#     # Supabase User object
-#     meta = getattr(user_obj, "user_metadata", {}) or {}
-#     email = getattr(user_obj, "email", None)
-
-#     return {
-#         "id": getattr(user_obj, "id", None),
-#         "email": email,
-#         "full_name": meta.get("full_name"),
-#         "name": meta.get("name"),
-#         "is_admin": meta.get("is_admin", False),
-#         "metadata": meta,
-#     }
-# def app_container_style() -> None:
-#     dark = is_dark_theme()
-
-#     if dark:
-#         bg = "radial-gradient(circle at 20% 20%, #0f1115, #050608 60%)"
-#         text = "#f8f9fa"
-#         card_bg = "rgba(18, 20, 23, 0.65)"
-#         card_border = "rgba(0,255,136,0.25)"
-#         card_shadow = "0 0 22px rgba(0,255,136,0.18)"
-#         accent = "#00ff88"
-#     else:
-#         bg = "#ffffff"
-#         text = "#222222"
-#         card_bg = "#fafafa"
-#         card_border = "#ddd"
-#         card_shadow = "0 0 12px rgba(0,0,0,0.08)"
-#         accent = "#009944"
-
-#     st.markdown(
-#         f"""
-#         <style>
-#         body, .stApp {{
-#             background: {bg} !important;
-#             color: {text} !important;
-#         }}
-
-#         p, span, label, h1, h2, h3, h4, h5, h6, div {{
-#             color: {text} !important;
-#         }}
-
-#         .neon-card, .app-card {{
-#             background: {card_bg} !important;
-#             border-radius: 14px;
-#             padding: 20px;
-#             border: 1px solid {card_border} !important;
-#             box-shadow: {card_shadow} !important;
-#         }}
-
-#         h1, h2, h3, h4 {{
-#             color: {accent} !important;
-#         }}
-#         </style>
-#         """,
-#         unsafe_allow_html=True,
-#     )
-
-# # ---------------------------------------------------------
-# # SESSION RESTORE (CRITICAL)
-# # ---------------------------------------------------------
-# def restore_session() -> bool:
-#     sb = get_supabase()
-
-#     # 1. Supabase cookie session
-#     session = sb.auth.get_session()
-#     if session and session.user:
-#         user_dict = extract_user_dict(session.user)
-
-#         st.session_state["auth_state"] = {
-#             "user": user_dict,
-#             "role": user_dict.get("metadata", {}).get("role"),
-#             "access_token": session.access_token,
-#             "refresh_token": session.refresh_token,
-#         }
-#         return True
-
-#     # 2. Stored session_state
-#     auth_state = st.session_state.get("auth_state")
-#     if auth_state:
-#         access = auth_state.get("access_token")
-#         refresh = auth_state.get("refresh_token")
-
-#         if access and refresh:
-#             sb.auth.set_session(access, refresh)
-
-#         return True
-
-#     return False
-
-
-# # ---------------------------------------------------------
-# # REQUIRE USER
-# # ---------------------------------------------------------
-# def require_user():
-#     auth_state = st.session_state.get("auth_state")
-#     if not auth_state:
-#         st.error("You are not logged in.")
-#         st.stop()
-
-#     return auth_state["user"]
-
-
-# # ---------------------------------------------------------
-# # REQUIRE STUDENT
-# # ---------------------------------------------------------
-# def require_student():
-#     user = require_user()
-
-#     if user.get("is_admin", False):
-#         st.error("Students only. Please use Admin Login.")
-#         st.stop()
-
-#     return user
-
-
-# # ---------------------------------------------------------
-# # REQUIRE ADMIN
-# # ---------------------------------------------------------
-# def require_admin():
-#     user = require_user()
-
-#     if not user.get("is_admin", False):
-#         st.error("Admin access required.")
-#         st.stop()
-
-#     return user
-
-
-# # ---------------------------------------------------------
-# # SANITIZERS
-# # ---------------------------------------------------------
-# def sanitize_html(text: str) -> str:
-#     if not isinstance(text, str):
-#         return ""
-#     text = re.sub(r"</?div[^>]*>", "", text, flags=re.IGNORECASE)
-#     return text.replace("&nbsp;", " ").strip()
-
-
-# def clean_math(text: Any) -> str:
-#     if not isinstance(text, str):
-#         return ""
-#     text = text.replace("\\\\(", "\\(").replace("\\\\)", "\\)")
-#     text = text.replace("\\\\[", "\\[").replace("\\\\]", "\\]")
-#     text = text.replace("\\\\frac", "\\frac")
-#     return re.sub(r"\$\s*\$", "$$", text)
-
-
-# # ---------------------------------------------------------
-# # PUBLIC CONTENT
-# # ---------------------------------------------------------
-# def render_public_content() -> None:
-#     sb = get_supabase()
-#     res = (
-#         sb.table("public_content")
-#         .select("*")
-#         .order("created_at", desc=True)
-#         .execute()
-#     )
-
-#     raw_items = getattr(res, "data", []) or []
-#     items: List[Dict[str, Any]] = [
-#         cast(Dict[str, Any], row) for row in raw_items if isinstance(row, dict)
-#     ]
-
-#     if not items:
-#         st.info("No public content available.")
-#         return
-
-#     for item in items:
-#         title = str(item.get("title", "Untitled"))
-#         body_raw = item.get("body", "")
-#         body = sanitize_html(clean_math(body_raw))
-
-#         st.markdown(f"### {title}")
-#         st.markdown(body, unsafe_allow_html=True)
-
-
-# # ---------------------------------------------------------
-# # DISPLAY NAME
-# # ---------------------------------------------------------
-# def get_display_name(user: Any, role: str) -> str:
-#     # Handle None safely
-#     if not user:
-#         return role.capitalize()
-
-#     # If dict
-#     if isinstance(user, dict):
-#         return (
-#             user.get("full_name")
-#             or user.get("name")
-#             or user.get("email")
-#             or role.capitalize()
-#         )
-
-#     # If Supabase User object
-#     meta = getattr(user, "user_metadata", {}) or {}
-#     email = getattr(user, "email", None)
-
-#     return (
-#         meta.get("full_name")
-#         or meta.get("name")
-#         or email
-#         or role.capitalize()
-#     )
-
-# # ---------------------------------------------------------
-# # TOP BAR
-# # ---------------------------------------------------------
-# def top_bar(title: str, role: str) -> None:
-#     dark = is_dark_theme()
-
-#     if dark:
-#         bar_bg = "#0a0c10"
-#         bar_border = "#00ff88"
-#         name_color = "#00ff88"
-#         title_color = "#ffffff"
-#     else:
-#         bar_bg = "#f0f0f0"
-#         bar_border = "#cccccc"
-#         name_color = "#009944"
-#         title_color = "#222222"
-
-#     auth_state = st.session_state.get("auth_state")
-#     user = auth_state["user"] if auth_state else None
-#     display_name = get_display_name(user, role)
-
-#     st.markdown(
-#         f"""
-#         <div style="
-#             background:{bar_bg};
-#             border-bottom:1px solid {bar_border};
-#             padding:12px 16px;
-#             border-radius:6px;
-#         ">
-#             <span style="color:{name_color}; font-weight:600;">{display_name}</span>
-#             <h3 style="margin:4px 0 0 0; color:{title_color};">{title}</h3>
-#         </div>
-#         """,
-#         unsafe_allow_html=True,
-#     )
-
-#     if st.button("Logout", key=f"logout_{role}"):
-#         logout()
-
-
-# # ---------------------------------------------------------
-# # LOGOUT
-# # ---------------------------------------------------------
-# def logout() -> None:
-#     try:
-#         sb = get_supabase()
-#         sb.auth.sign_out()
-#     except Exception:
-#         pass
-
-#     st.session_state.clear()
-#     st.query_params.clear()
-#     st.rerun()
+def require_student() -> None:
+    if st.session_state.get("role") != "student":
+        st.error("Please login as student.")
+        st.stop()
