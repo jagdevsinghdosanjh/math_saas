@@ -5,6 +5,9 @@ from typing import Any, Dict, List, cast
 from utils.db import get_supabase
 from themes.theme import is_dark_theme
 
+TEXT_MUTED = "#a0a6b1"
+TEXT_MAIN = "#f8f9fa"
+ACCENT = "#00ff88"
 
 # ---------------------------------------------------------
 # GLOBAL STYLE
