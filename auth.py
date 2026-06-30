@@ -2,6 +2,7 @@ import streamlit as st
 import re
 from typing import Any, Dict, List, cast
 from utils.db import get_supabase
+from themes.theme import is_dark_theme
 
 TEXT_MUTED = "#a0a6b1"
 TEXT_MAIN = "#f8f9fa"
@@ -11,30 +12,52 @@ ACCENT = "#00ff88"
 # ------------------------------------------------------------
 # GLOBAL STYLE
 # ------------------------------------------------------------
-def app_container_style() -> None:
+def app_container_style():
+    dark = is_dark_theme()
+
+    if dark:
+        bg = "radial-gradient(circle at 20% 20%, #0f1115, #050608 60%)"
+        text = "#f8f9fa"
+        card_bg = "rgba(18, 20, 23, 0.65)"
+        card_border = "rgba(0,255,136,0.25)"
+        card_shadow = "0 0 22px rgba(0,255,136,0.18)"
+        accent = "#00ff88"
+    else:
+        bg = "#ffffff"
+        text = "#222222"
+        card_bg = "#fafafa"
+        card_border = "#ddd"
+        card_shadow = "0 0 12px rgba(0,0,0,0.08)"
+        accent = "#009944"
+
     st.markdown(
-        """<style>
-        body {
-            background: radial-gradient(circle at 20% 20%, #0f1115, #050608 60%);
-            color: #f8f9fa;
-            font-family: 'Inter', sans-serif;
-        }
-        .neon-card {
-            background: rgba(18, 20, 23, 0.65);
-            backdrop-filter: blur(12px);
+        f"""
+        <style>
+        body, .stApp {{
+            background: {bg} !important;
+            color: {text} !important;
+        }}
+
+        p, span, label, h1, h2, h3, h4, h5, h6, div {{
+            color: {text} !important;
+        }}
+
+        .neon-card, .app-card {{
+            background: {card_bg} !important;
             border-radius: 14px;
             padding: 20px;
-            border: 1px solid rgba(0,255,136,0.25);
-            box-shadow: 0 0 22px rgba(0,255,136,0.18);
-        }
-        h1, h2, h3, h4 {
-            color: #00ff88;
-            font-weight: 600;
-        }
+            border: 1px solid {card_border} !important;
+            box-shadow: {card_shadow} !important;
+        }}
+
+        h1, h2, h3, h4 {{
+            color: {accent} !important;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
     )
+
 
 
 # ------------------------------------------------------------
@@ -114,15 +137,33 @@ def get_display_name(user: Any, role: str) -> str:
 # ------------------------------------------------------------
 # TOP BAR (Refactored)
 # ------------------------------------------------------------
-def top_bar(title: str, role: str, logout_param: str) -> None:
+def top_bar(title: str, role: str, logout_param: str):
+    dark = is_dark_theme()
+
+    if dark:
+        bar_bg = "#0a0c10"
+        bar_border = "#00ff88"
+        name_color = "#00ff88"
+        title_color = "#ffffff"
+    else:
+        bar_bg = "#f0f0f0"
+        bar_border = "#cccccc"
+        name_color = "#009944"
+        title_color = "#222222"
+
     user = st.session_state.get("user")
     display_name = get_display_name(user, role)
 
     st.markdown(
         f"""
-        <div style="background:#0a0c10; border-bottom:1px solid #00ff88; padding:12px 16px;">
-            <span style="color:#00ff88; font-weight:600;">{display_name}</span>
-            <h3 style="margin:4px 0 0 0; color:white;">{title}</h3>
+        <div style="
+            background:{bar_bg};
+            border-bottom:1px solid {bar_border};
+            padding:12px 16px;
+            border-radius:6px;
+        ">
+            <span style="color:{name_color}; font-weight:600;">{display_name}</span>
+            <h3 style="margin:4px 0 0 0; color:{title_color};">{title}</h3>
         </div>
         """,
         unsafe_allow_html=True,
@@ -130,6 +171,7 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
 
     if st.button("Logout", key=f"logout_{role}"):
         logout()
+
 # def top_bar(title: str, role: str, logout_param: str) -> None:
 #     user = st.session_state.get("user")
 #     display_name = get_display_name(user, role)
