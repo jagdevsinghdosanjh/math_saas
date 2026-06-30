@@ -96,7 +96,7 @@ def student_login_form():
 # MAIN ROUTER
 # -------------------------------------------------
 def main():
-    # Restore session FIRST (only once)
+    # Restore session FIRST
     auth.restore_session()
 
     # Razorpay redirect
