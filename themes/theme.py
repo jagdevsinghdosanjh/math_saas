@@ -1,8 +1,8 @@
 import streamlit as st
 
-# -----------------------------
-# DARK NEON THEME (FIXED)
-# -----------------------------
+# ============================================================
+# DARK NEON THEME (FULL READABILITY)
+# ============================================================
 def apply_dark_theme():
     st.markdown(
         """
@@ -15,17 +15,28 @@ def apply_dark_theme():
             font-family: 'Inter', sans-serif;
         }
 
-        /* FIX: All text elements */
-        p, span, label, h1, h2, h3, h4, h5, h6, div, .stMarkdown, .stText, .stRadio label {
+        /* UNIVERSAL TEXT FIX */
+        p, span, label, h1, h2, h3, h4, h5, h6, div, 
+        .stMarkdown, .stText, .stRadio label, .stSelectbox label {
             color: #f8f9fa !important;
         }
 
-        /* FIX: Streamlit metric cards */
-        .stMetric, .metric-card, [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
+        /* NAVBAR + USERNAME FIX */
+        header, [data-testid="stHeader"], .st-emotion-cache-18ni7ap {
+            background-color: transparent !important;
             color: #f8f9fa !important;
         }
 
-        /* FIX: Buttons */
+        /* Logged-in user badge */
+        .user-badge {
+            padding: 6px 12px;
+            background-color: #1a1d23 !important;
+            color: #f8f9fa !important;
+            border-radius: 6px;
+            border: 1px solid #333 !important;
+        }
+
+        /* BUTTONS */
         .stButton>button {
             background-color: #1a1d23 !important;
             color: #f8f9fa !important;
@@ -37,31 +48,27 @@ def apply_dark_theme():
             border-color: #666 !important;
         }
 
-        /* FIX: Inputs */
-        input, textarea {
+        /* INPUTS */
+        input, textarea, select {
             background-color: #1a1d23 !important;
             color: #f8f9fa !important;
             border: 1px solid #333 !important;
         }
 
-        /* FIX: Sidebar */
+        /* SIDEBAR */
         section[data-testid="stSidebar"] {
             background-color: #0d0f12 !important;
         }
 
-        /* FIX: Status colors */
-        .status-ok {
-            color: #00ff88 !important;
-            font-weight: bold;
+        /* CARDS / METRICS */
+        .metric-card, .stMetric, [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
+            color: #f8f9fa !important;
         }
-        .status-down {
-            color: #ff4d4d !important;
-            font-weight: bold;
-        }
-        .status-warn {
-            color: #ffcc00 !important;
-            font-weight: bold;
-        }
+
+        /* STATUS COLORS */
+        .status-ok { color: #00ff88 !important; font-weight: bold; }
+        .status-down { color: #ff4d4d !important; font-weight: bold; }
+        .status-warn { color: #ffcc00 !important; font-weight: bold; }
 
         </style>
         """,
@@ -69,9 +76,9 @@ def apply_dark_theme():
     )
 
 
-# -----------------------------
-# LIGHT THEME (FIXED)
-# -----------------------------
+# ============================================================
+# LIGHT THEME (FULL READABILITY)
+# ============================================================
 def apply_light_theme():
     st.markdown(
         """
@@ -79,21 +86,35 @@ def apply_light_theme():
 
         body, .stApp {
             background-color: #ffffff !important;
-            color: #000000 !important;
+            color: #222222 !important;
             font-family: 'Inter', sans-serif;
         }
 
-        p, span, label, h1, h2, h3, h4, h5, h6, div, .stMarkdown, .stText {
-            color: #000000 !important;
+        /* UNIVERSAL TEXT FIX */
+        p, span, label, h1, h2, h3, h4, h5, h6, div, 
+        .stMarkdown, .stText, .stRadio label, .stSelectbox label {
+            color: #222222 !important;
         }
 
-        section[data-testid="stSidebar"] {
-            background-color: #f5f5f5 !important;
+        /* NAVBAR + USERNAME FIX */
+        header, [data-testid="stHeader"], .st-emotion-cache-18ni7ap {
+            background-color: transparent !important;
+            color: #222222 !important;
         }
 
+        /* Logged-in user badge */
+        .user-badge {
+            padding: 6px 12px;
+            background-color: #f0f0f0 !important;
+            color: #222222 !important;
+            border-radius: 6px;
+            border: 1px solid #ccc !important;
+        }
+
+        /* BUTTONS */
         .stButton>button {
             background-color: #e8e8e8 !important;
-            color: #000000 !important;
+            color: #222222 !important;
             border: 1px solid #ccc !important;
             border-radius: 6px !important;
         }
@@ -101,26 +122,31 @@ def apply_light_theme():
             background-color: #dcdcdc !important;
         }
 
+        /* INPUTS */
+        input, textarea, select {
+            background-color: #fafafa !important;
+            color: #222222 !important;
+            border: 1px solid #ccc !important;
+        }
+
+        /* SIDEBAR */
+        section[data-testid="stSidebar"] {
+            background-color: #f5f5f5 !important;
+        }
+
+        /* CARDS / METRICS */
         .metric-card {
             background-color: #fafafa !important;
             padding: 20px;
             border-radius: 10px;
             border: 1px solid #ddd !important;
-            color: #000000 !important;
+            color: #222222 !important;
         }
 
-        .status-ok {
-            color: #009944 !important;
-            font-weight: bold;
-        }
-        .status-down {
-            color: #cc0000 !important;
-            font-weight: bold;
-        }
-        .status-warn {
-            color: #cc8800 !important;
-            font-weight: bold;
-        }
+        /* STATUS COLORS */
+        .status-ok { color: #009944 !important; font-weight: bold; }
+        .status-down { color: #cc0000 !important; font-weight: bold; }
+        .status-warn { color: #cc8800 !important; font-weight: bold; }
 
         </style>
         """,
