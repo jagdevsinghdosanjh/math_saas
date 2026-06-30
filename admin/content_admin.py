@@ -107,20 +107,64 @@ def _render_item(sb, item: Dict[str, Any]) -> None:
 # ---------------------------------------------------------
 def render() -> None:
     require_admin()
+    st.title("📚 Content Manager")
+
     sb = get_supabase()
 
-    st.title("Content Manager")
+    # Fetch content
+    res = (
+        sb.table("content")
+        .select("*")
+        .order("created_at", desc=True)
+        .execute()
+    )
 
-    # Add new content
-    _publish_content(sb)
-
-    # Existing content
-    st.subheader("Existing Content")
-    items = _fetch_content(sb)
+    items = res.data or []
 
     if not items:
-        st.info("No content available.")
+        st.info("No content found.")
         return
 
-    for item in items:
-        _render_item(sb, item)
+    # Display content list
+    st.subheader("All Content")
+    st.dataframe(items, hide_index=True, width="stretch")
+
+    # Add new content
+    st.subheader("Add New Content")
+
+    with st.form("add_content_form"):
+        title = st.text_input("Title")
+        body = st.text_area("Body")
+
+        submit = st.form_submit_button("Create")
+
+        if submit:
+            try:
+                sb.table("content").insert(
+                    {"title": title, "body": body}
+                ).execute()
+
+                st.success("Content created successfully.")
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Failed to create content: {exc}")
+
+# def render() -> None:
+#     require_admin()
+#     sb = get_supabase()
+
+#     st.title("Content Manager")
+
+#     # Add new content
+#     _publish_content(sb)
+
+#     # Existing content
+#     st.subheader("Existing Content")
+#     items = _fetch_content(sb)
+
+#     if not items:
+#         st.info("No content available.")
+#         return
+
+#     for item in items:
+#         _render_item(sb, item)
