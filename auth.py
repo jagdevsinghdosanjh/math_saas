@@ -3,6 +3,10 @@ import re
 from typing import Any, Dict, List
 from utils.db import get_supabase
 
+TEXT_MUTED = "#a0a6b1"
+TEXT_MAIN = "#f8f9fa"
+ACCENT = "#00ff88"
+
 
 # ------------------------------------------------------------
 # GLOBAL STYLE
