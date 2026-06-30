@@ -10,6 +10,7 @@ from student.student_app import run_student
 from student.public_content import render_public_content
 from student.signup_page import render_signup_page
 from utils.db import get_supabase
+import pages.razorpay_checkout as razorpay_checkout
 
 st.set_page_config(page_title="Math Hub", page_icon="📘", layout="wide")
 
@@ -46,6 +47,7 @@ def handle_login(email: str, password: str, role: str):
         st.error("Profile not found.")
         return None, None
 
+    # Role validation
     if role == "admin" and not profile_raw.get("is_admin", False):
         st.error("You are not an admin.")
         return None, None
@@ -69,10 +71,12 @@ def admin_login_form():
     if st.button("Login as Admin"):
         profile, session = handle_login(email, password, "admin")
         if profile and session:
-            st.session_state["user"] = profile
-            st.session_state["role"] = "admin"
-            st.session_state["access_token"] = session.access_token
-            st.session_state["refresh_token"] = session.refresh_token
+            st.session_state["auth_state"] = {
+                "user": profile,
+                "role": "admin",
+                "access_token": session.access_token,
+                "refresh_token": session.refresh_token,
+            }
             st.rerun()
 
 
@@ -88,10 +92,12 @@ def student_login_form():
     if st.button("Login as Student"):
         profile, session = handle_login(email, password, "student")
         if profile and session:
-            st.session_state["user"] = profile
-            st.session_state["role"] = "student"
-            st.session_state["access_token"] = session.access_token
-            st.session_state["refresh_token"] = session.refresh_token
+            st.session_state["auth_state"] = {
+                "user": profile,
+                "role": "student",
+                "access_token": session.access_token,
+                "refresh_token": session.refresh_token,
+            }
             st.rerun()
 
 
@@ -99,25 +105,40 @@ def student_login_form():
 # MAIN ROUTER
 # -------------------------------------------------
 def main():
+    # Restore session FIRST
     restore_session()
 
-    # Razorpay redirect
+    auth_state = st.session_state.get("auth_state")
+    role = auth_state.get("role") if auth_state else None
+
+    # Razorpay redirect (same tab)
     if st.query_params.get("page") == "razorpay_checkout":
-        st.switch_page("pages/razorpay_checkout.py")
+        if not auth_state:
+            st.error("Session expired. Please log in again.")
+            return
+        razorpay_checkout.render_razorpay_checkout()
         return
 
-    # Theme selection
+    # -------------------------------------------------
+    # THEME SELECTION
+    # -------------------------------------------------
+    if st.session_state.get("theme_choice") not in ["Dark (Neon)", "Light"]:
+        st.session_state["theme_choice"] = "Dark (Neon)"
+
     theme_choice = st.radio(
         "Choose Theme:",
         ["Dark (Neon)", "Light"],
+        index=["Dark (Neon)", "Light"].index(st.session_state["theme_choice"]),
         horizontal=True,
     )
 
+    st.session_state["theme_choice"] = theme_choice
+
     apply_light_theme() if theme_choice == "Light" else apply_dark_theme()
 
-    # Role-based routing
-    role = st.session_state.get("role")
-
+    # -------------------------------------------------
+    # ROLE ROUTING
+    # -------------------------------------------------
     if role == "admin":
         run_admin()
         return
@@ -126,10 +147,12 @@ def main():
         run_student()
         return
 
-    # Public landing page
+    # -------------------------------------------------
+    # PUBLIC LANDING PAGE
+    # -------------------------------------------------
     st.markdown("<h2>Welcome to Student's Math Companion</h2>", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         if st.button("Admin Login"):
@@ -146,6 +169,11 @@ def main():
             st.session_state["login_mode"] = "signup"
             st.rerun()
 
+    with col4:
+        if st.button("Forgot Password?"):
+            st.session_state["login_mode"] = "forgot"
+            st.rerun()
+
     mode = st.session_state.get("login_mode")
 
     if mode == "admin":
@@ -154,6 +182,9 @@ def main():
         student_login_form()
     elif mode == "signup":
         render_signup_page()
+    elif mode == "forgot":
+        from student.forgot_password import render_forgot_password_page
+        render_forgot_password_page()
 
     st.markdown("<hr>", unsafe_allow_html=True)
     render_public_content()
