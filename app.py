@@ -110,7 +110,7 @@ def main():
 
     # Ensure theme_choice is always valid
     if st.session_state.get("theme_choice") not in ["Dark (Neon)", "Light"]:
-        st.session_state["theme_choice"] = "Dark (Neon)"
+        st.session_state["theme_choice"] = "Light"#"Dark (Neon)"
 
     default_theme = st.session_state["theme_choice"]
 
