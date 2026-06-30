@@ -29,10 +29,7 @@ def safe_str(value: Any) -> str:
 
 
 def safe_order_create(client: Any, payload: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Pylance-safe wrapper for Razorpay order.create().
-    Razorpay dynamically injects `.order`, so we suppress type checking.
-    """
+    """Safe wrapper for Razorpay order.create()"""
     try:
         order = client.order.create(payload)  # type: ignore[attr-defined]
         return order if isinstance(order, dict) else {}
@@ -94,7 +91,6 @@ def render_razorpay_checkout() -> None:
     # Authorization check
     if safe_str(sub.get("user_id")) != getattr(user, "id", ""):
         st.error("Unauthorized access.")
-        st.write("DEBUG: user_id mismatch, stopping checkout")
         st.stop()
 
     # Extract fields safely
@@ -111,14 +107,30 @@ def render_razorpay_checkout() -> None:
     })
 
     # ---------------------------------------------------------
-    # RAZORPAY ORDER CREATION
+    # FREE PLAN HANDLING
+    # ---------------------------------------------------------
+    if amount == 0:
+        st.success("You have subscribed to the free plan!")
+
+        sb.table("subscriptions").update({
+            "status": "active",
+            "payment_status": "free",
+            "razorpay_order_id": None,
+            "razorpay_payment_id": None,
+            "razorpay_signature": None,
+        }).eq("id", sub_id).execute()
+
+        st.switch_page("pages/subscriptions.py")
+        return
+
+    # ---------------------------------------------------------
+    # PAID PLAN — RAZORPAY ORDER CREATION
     # ---------------------------------------------------------
     client = get_razorpay_client()
     st.write("DEBUG: Razorpay client =", client)
 
     if client is None:
         st.error("Razorpay keys not configured.")
-        st.write("DEBUG: client is None, stopping checkout")
         st.stop()
 
     key_id, key_secret = get_razorpay_keys()
@@ -146,7 +158,6 @@ def render_razorpay_checkout() -> None:
 
     if not order_id:
         st.error("Failed to create Razorpay order.")
-        st.write("DEBUG: missing order_id, stopping checkout")
         st.stop()
 
     # Save order_id
