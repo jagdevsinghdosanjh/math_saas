@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from auth import require_admin
 from utils.db import get_supabase
