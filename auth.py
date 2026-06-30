@@ -58,6 +58,18 @@ def app_container_style() -> None:
         unsafe_allow_html=True,
     )
 
+def require_student():
+    user = st.session_state.get("user")
+    if not user:
+        st.error("You are not logged in.")
+        st.stop()
+
+    # Admins should NOT access student pages
+    if user.get("is_admin", False):
+        st.error("Students only. Please use Admin Login.")
+        st.stop()
+
+    return user
 
 # ---------------------------------------------------------
 # SESSION RESTORE (CRITICAL FOR RAZORPAY)
