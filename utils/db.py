@@ -11,7 +11,6 @@ def _base_client() -> Client:
     anon = st.secrets["supabase"]["anon_key"]
     return create_client(url, anon)
 
-
 # ------------------------------------------------------------
 # GET SUPABASE CLIENT (AUTH-AWARE)
 # ------------------------------------------------------------
@@ -35,7 +34,6 @@ def get_supabase() -> Client:
             pass
 
     return client
-
 
 # ------------------------------------------------------------
 # REQUIRE LOGGED-IN USER (UNIFIED MODEL)
