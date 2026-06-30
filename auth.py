@@ -6,12 +6,9 @@ from utils.db import get_supabase
 from themes.theme import is_dark_theme
 
 
-TEXT_MUTED = "#a0a6b1"
-TEXT_MAIN = "#f8f9fa"
-ACCENT = "#00ff88"
-
-
+# ---------------------------------------------------------
 # GLOBAL STYLE
+# ---------------------------------------------------------
 def app_container_style() -> None:
     dark = is_dark_theme()
 
@@ -58,10 +55,14 @@ def app_container_style() -> None:
         unsafe_allow_html=True,
     )
 
-def restore_session():
+
+# ---------------------------------------------------------
+# SESSION RESTORE (CRITICAL FOR RAZORPAY)
+# ---------------------------------------------------------
+def restore_session() -> bool:
     sb = get_supabase()
 
-    # 1. Try Supabase cookie session
+    # 1. Supabase cookie session
     session = sb.auth.get_session()
     if session and session.user:
         st.session_state["session"] = session
@@ -71,7 +72,7 @@ def restore_session():
         st.session_state["refresh_token"] = session.refresh_token
         return True
 
-    # 2. Try stored session_state
+    # 2. Stored session_state
     auth_state = st.session_state.get("auth_state")
     if auth_state:
         user = auth_state.get("user")
@@ -90,7 +91,10 @@ def restore_session():
 
     return False
 
+
+# ---------------------------------------------------------
 # SANITIZERS
+# ---------------------------------------------------------
 def sanitize_html(text: str) -> str:
     if not isinstance(text, str):
         return ""
@@ -107,7 +111,9 @@ def clean_math(text: Any) -> str:
     return re.sub(r"\$\s*\$", "$$", text)
 
 
+# ---------------------------------------------------------
 # PUBLIC CONTENT
+# ---------------------------------------------------------
 def render_public_content() -> None:
     sb = get_supabase()
     res = (
@@ -135,7 +141,9 @@ def render_public_content() -> None:
         st.markdown(body, unsafe_allow_html=True)
 
 
+# ---------------------------------------------------------
 # DISPLAY NAME HANDLER
+# ---------------------------------------------------------
 def get_display_name(user: Any, role: str) -> str:
     if isinstance(user, dict):
         return (
@@ -156,8 +164,26 @@ def get_display_name(user: Any, role: str) -> str:
     )
 
 
-# TOP BAR
-def top_bar(title: str, role: str, logout_param: str) -> None:
+# ---------------------------------------------------------
+# ADMIN ACCESS CHECK
+# ---------------------------------------------------------
+def require_admin():
+    user = st.session_state.get("user")
+    if not user:
+        st.error("You are not logged in.")
+        st.stop()
+
+    if not user.get("is_admin", False):
+        st.error("Admin access required.")
+        st.stop()
+
+    return user
+
+
+# ---------------------------------------------------------
+# TOP BAR (ADMIN + STUDENT)
+# ---------------------------------------------------------
+def top_bar(title: str, role: str) -> None:
     dark = is_dark_theme()
 
     if dark:
@@ -192,6 +218,10 @@ def top_bar(title: str, role: str, logout_param: str) -> None:
     if st.button("Logout", key=f"logout_{role}"):
         logout()
 
+
+# ---------------------------------------------------------
+# LOGOUT
+# ---------------------------------------------------------
 def logout() -> None:
     try:
         sb = get_supabase()
@@ -199,7 +229,6 @@ def logout() -> None:
     except Exception:
         pass
 
-    # Clear session state
     for key in [
         "user",
         "role",
@@ -209,11 +238,9 @@ def logout() -> None:
         "auth_state",
         "access_token",
         "refresh_token",
+        "sub_id",
     ]:
         st.session_state.pop(key, None)
 
-    # Clear query params
     st.query_params.clear()
-
-    # Rerun app
     st.rerun()
