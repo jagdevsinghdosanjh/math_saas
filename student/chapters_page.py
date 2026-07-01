@@ -29,7 +29,7 @@ def fetch_chapters(grade: str, board: str) -> List[Dict[str, Any]]:
             .eq("grade", grade)
             .eq("board", board)
             .order("id", desc=False)
-            .execute()
+            .execute()  
         )
 
         rows = res.data or []
@@ -103,7 +103,8 @@ def render_chapter_card(
     else:
         if st.button("Open Chapter", key=f"open_{cid}"):
             st.session_state["chapter_id"] = cid
-            st.session_state["page"] = "chapter_detail"
+            st.session_state["chapter_mode"] = "detail"
+            st.session_state["chapter_id"] = cid
             st.rerun()
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
