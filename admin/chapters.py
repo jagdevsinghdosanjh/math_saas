@@ -77,21 +77,21 @@ def render():
                         )
 
 # STEP 3 — Confirm delete button
-                if st.button(f"Confirm Delete {cid}", key=f"confirm_del_{cid}"):
-                    try:
-                        sb.table("pdf_notes").delete().eq("chapter_id", cid).execute()
-                        sb.table("videos").delete().eq("chapter_id", cid).execute()
-                        sb.table("chapter_progress").delete().eq("chapter_id", cid).execute()
-                        sb.table("chapters").delete().eq("id", cid).execute()
+                    if st.button(f"Confirm Delete {cid}", key=f"confirm_del_{cid}"):
+                        try:
+                            sb.table("pdf_notes").delete().eq("chapter_id", cid).execute()
+                            sb.table("videos").delete().eq("chapter_id", cid).execute()
+                            sb.table("chapter_progress").delete().eq("chapter_id", cid).execute()
+                            sb.table("chapters").delete().eq("id", cid).execute()
 
-                        st.success(f"Chapter {cid} deleted successfully.")
+                            st.success(f"Chapter {cid} deleted successfully.")
 # Clear flag
-                        st.session_state["confirm_delete"] = None
+                            st.session_state["confirm_delete"] = None
 
-                        st.rerun()
+                            st.rerun()
 
-                    except Exception as exc:
-                        st.error(f"Failed to delete chapter: {exc}")
+                        except Exception as exc:
+                            st.error(f"Failed to delete chapter: {exc}")
 
 # -----------------------------
 # ADD NEW CHAPTER
