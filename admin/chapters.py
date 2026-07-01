@@ -80,8 +80,6 @@ def render():
                         "- The chapter itself\n\n"
                         "This action cannot be undone."
                     )
-
-                    # STEP 3 — Confirm delete button (nested correctly)
                     if st.button(f"Confirm Delete {cid}", key=f"confirm_del_{cid}"):
                         try:
                             sb.table("pdf_notes").delete().eq("chapter_id", cid).execute()
@@ -96,12 +94,10 @@ def render():
 
                             # Clear delete flag
                             st.session_state["confirm_delete"] = None
-
                             st.rerun()
 
                         except Exception as exc:
                             st.error(f"Failed to delete chapter: {exc}")
-
     # -----------------------------
     # ADD NEW CHAPTER
     # -----------------------------
