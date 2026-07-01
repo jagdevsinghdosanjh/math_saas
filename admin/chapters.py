@@ -85,6 +85,7 @@ def render():
                             sb.table("chapters").delete().eq("id", cid).execute()
 
                             st.success(f"Chapter {cid} deleted successfully.")
+                            print(f"Chapter {cid} deleted successfully.")
 # Clear flag
                             st.session_state["confirm_delete"] = None
 
