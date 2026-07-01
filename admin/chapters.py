@@ -83,14 +83,10 @@ def render():
                             sb.table("videos").delete().eq("chapter_id", cid).execute()
                             sb.table("chapter_progress").delete().eq("chapter_id", cid).execute()
                             sb.table("chapters").delete().eq("id", cid).execute()
-
                             st.success(f"Chapter {cid} deleted successfully.")
-                            print(f"Chapter {cid} deleted successfully.")
 # Clear flag
                             st.session_state["confirm_delete"] = None
-
                             st.rerun()
-
                         except Exception as exc:
                             st.error(f"Failed to delete chapter: {exc}")
 
