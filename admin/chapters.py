@@ -1,7 +1,6 @@
 import streamlit as st
 from typing import Any, Dict, List
 from auth import require_admin
-from utils.db import get_supabase
 from utils.db import get_supabase_admin
 
 # ---------------------------------------------------------
@@ -34,7 +33,7 @@ def render():
         st.success(st.session_state["delete_success"])
         st.session_state["delete_success"] = None
 
-    sb = get_supabase()
+    sb = get_supabase_admin()
     chapters = _fetch_chapters()
 
     st.subheader("All Chapters")
