@@ -77,9 +77,20 @@ def render():
 
                             # Delete related progress
                             sb.table("chapter_progress").delete().eq("chapter_id", cid).execute()
+                            if st.button(f"Delete Chapter {cid}", key=f"del_{cid}"):
+                                st.error(
+                                    f"⚠️ WARNING: Deleting chapter {cid} will remove:\n"
+                                    "- All PDF notes\n"
+                                    "- All videos\n"
+                                    "- All student progress\n"
+                                    "- The chapter itself\n\n"
+                                    "This action cannot be undone."
+                                    )
 
-                            # Delete chapter itself
-                            sb.table("chapters").delete().eq("id", cid).execute()
+                            if st.button(f"Confirm Delete {cid}", key=f"confirm_{cid}"):
+                                # perform deletion
+                                # Delete chapter itself
+                                sb.table("chapters").delete().eq("id", cid).execute()
 
                             st.success(f"Chapter {cid} deleted successfully.")
                             st.rerun()
