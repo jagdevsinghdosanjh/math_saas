@@ -3,6 +3,9 @@ from supabase import create_client, Client
 from typing import Any, Dict
 import os
 
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
 def get_supabase_admin():
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -45,9 +48,8 @@ def get_supabase() -> Client:
         except Exception:
             # If tokens are invalid (expired/cleared), fall back to anon client
             pass
-
+        
     return client
-
 
 # REQUIRE LOGGED-IN USER (UNIFIED MODEL)
 def require_user() -> Dict[str, Any]:

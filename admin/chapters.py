@@ -2,13 +2,13 @@ import streamlit as st
 from typing import Any, Dict, List
 from auth import require_admin
 from utils.db import get_supabase
-
+from utils.db import get_supabase_admin
 
 # ---------------------------------------------------------
 # FETCH CHAPTERS (TYPE-SAFE)
 # ---------------------------------------------------------
 def _fetch_chapters() -> List[Dict[str, Any]]:
-    sb = get_supabase()
+    sb = get_supabase_admin()
 
     res = (
         sb.table("chapters")
