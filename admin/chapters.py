@@ -61,8 +61,12 @@ def render():
                     unsafe_allow_html=True,
                 )
 
-                # Delete button (step 1)
+# STEP 1 — Delete button clicked
                 if st.button(f"Delete Chapter {cid}", key=f"del_{cid}"):
+                    st.session_state["confirm_delete"] = cid
+
+# STEP 2 — Show warning if this chapter is selected for deletion
+                if st.session_state.get("confirm_delete") == cid:
                     st.error(
                         f"⚠️ WARNING: Deleting chapter {cid} will remove:\n"
                         "- All PDF notes\n"
@@ -70,25 +74,28 @@ def render():
                         "- All student progress\n"
                         "- The chapter itself\n\n"
                         "This action cannot be undone."
-                    )
+                        )
 
-                    # Confirm delete (step 2)
-                    if st.button(f"Confirm Delete {cid}", key=f"confirm_del_{cid}"):
-                        try:
-                            sb.table("pdf_notes").delete().eq("chapter_id", cid).execute()
-                            sb.table("videos").delete().eq("chapter_id", cid).execute()
-                            sb.table("chapter_progress").delete().eq("chapter_id", cid).execute()
-                            sb.table("chapters").delete().eq("id", cid).execute()
+# STEP 3 — Confirm delete button
+                if st.button(f"Confirm Delete {cid}", key=f"confirm_del_{cid}"):
+                    try:
+                        sb.table("pdf_notes").delete().eq("chapter_id", cid).execute()
+                        sb.table("videos").delete().eq("chapter_id", cid).execute()
+                        sb.table("chapter_progress").delete().eq("chapter_id", cid).execute()
+                        sb.table("chapters").delete().eq("id", cid).execute()
 
-                            st.success(f"Chapter {cid} deleted successfully.")
-                            st.rerun()
+                        st.success(f"Chapter {cid} deleted successfully.")
+# Clear flag
+                        st.session_state["confirm_delete"] = None
 
-                        except Exception as exc:
-                            st.error(f"Failed to delete chapter: {exc}")
+                        st.rerun()
 
-    # -----------------------------
-    # ADD NEW CHAPTER
-    # -----------------------------
+                    except Exception as exc:
+                        st.error(f"Failed to delete chapter: {exc}")
+
+# -----------------------------
+# ADD NEW CHAPTER
+# -----------------------------
     st.subheader("Add New Chapter")
 
     with st.form("add_chapter_form"):
