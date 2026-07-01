@@ -7,18 +7,28 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 def get_supabase_admin():
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-
-    if url is None:
-        st.error("SUPABASE_URL is missing in environment variables.")
-        raise ValueError("SUPABASE_URL is missing")
-
-    if key is None:
-        st.error("SUPABASE_SERVICE_ROLE_KEY is missing in environment variables.")
-        raise ValueError("SUPABASE_SERVICE_ROLE_KEY is missing")
+    try:
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["service_role_key"]
+    except KeyError:
+        st.error("Supabase admin credentials missing in st.secrets.")
+        raise
 
     return create_client(url, key)
+
+# def get_supabase_admin():
+#     url = os.getenv("SUPABASE_URL")
+#     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+#     if url is None:
+#         st.error("SUPABASE_URL is missing in environment variables.")
+#         raise ValueError("SUPABASE_URL is missing")
+
+#     if key is None:
+#         st.error("SUPABASE_SERVICE_ROLE_KEY is missing in environment variables.")
+#         raise ValueError("SUPABASE_SERVICE_ROLE_KEY is missing")
+
+#     return create_client(url, key)
 
 # ------------------------------------------------------------
 # BASE CLIENT (ANON KEY ONLY)
