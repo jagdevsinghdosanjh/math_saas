@@ -180,7 +180,13 @@ def run_student() -> None:
 
     # Chapters
     with tab_chapters:
+        mode = st.session_state.get("chapter_mode", "list")
+
+    if mode == "list":
         render_chapters_page()
+    elif mode == "detail":
+        from student.chapter_detail import render_chapter_detail
+        render_chapter_detail()
 
     # Quizzes
     with tab_quiz:
