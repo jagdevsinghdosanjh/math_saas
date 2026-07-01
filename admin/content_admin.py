@@ -113,7 +113,7 @@ def render() -> None:
 
     # Fetch content
     res = (
-        sb.table("content")
+        sb.table("public_content")
         .select("*")
         .order("created_at", desc=True)
         .execute()
