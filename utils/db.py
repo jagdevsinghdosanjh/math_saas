@@ -3,8 +3,8 @@ from supabase import create_client, Client
 from typing import Any, Dict
 import os
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+url = os.getenv("url")
+service_role_key = os.getenv("service_role_key")
 
 def get_supabase_admin():
     try:
